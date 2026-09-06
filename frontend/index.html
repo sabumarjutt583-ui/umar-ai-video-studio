@@ -940,22 +940,16 @@
     </div>
   </section> <!-- END #panelProjects -->
 
-  <!-- VIEW 5: AI VOICE STUDIO (FameSpeak Inspired 3-Column Layout with Emotion Tags & Timeline Sync) -->
+  <!-- VIEW 5: AI VOICE STUDIO (3 Sub-Pages: Edge-TTS, Voice Cloning, ElevenLabs) -->
   <section class="view-panel" id="panelVoiceStudio" hidden>
     <div class="voice-studio-header">
       <div class="voice-studio-title-box">
         <div class="voice-studio-title-row">
           <span class="voice-studio-icon">🎙️</span>
           <div>
-            <h2 class="voice-studio-title">AI Voice Studio & Emotion Engine</h2>
-            <p class="voice-studio-desc">Generate multi-lingual neural speech (100% Free Edge-TTS) with interactive emotion tags, voice cloning, or ElevenLabs, and send directly to your video timeline.</p>
+            <h2 class="voice-studio-title">AI Voice Studio & Audio Lab</h2>
+            <p class="voice-studio-desc">Three dedicated creation workspaces: 100% Free Edge-TTS, AI Voice Cloning, and ElevenLabs PRO with interactive emotion controls.</p>
           </div>
-        </div>
-        <div class="voice-studio-badges">
-          <span class="v-badge free">⚡ 100% Free & Unlimited</span>
-          <span class="v-badge urdu">🇵🇰 Urdu & 40+ Languages</span>
-          <span class="v-badge emotion">🎭 Emotion Tags</span>
-          <span class="v-badge sync">🎬 1-Click Timeline Sync</span>
         </div>
       </div>
       <div class="voice-studio-header-actions">
@@ -963,252 +957,479 @@
       </div>
     </div>
 
-    <!-- 3-Column Studio Grid Layout -->
-    <div class="voice-studio-grid">
-
-      <!-- COLUMN 1: LEFT SUB-NAVIGATION / ENGINES -->
-      <aside class="voice-sidebar">
-        <div class="voice-nav-group">
-          <span class="voice-group-title">Speech Engines</span>
-          <button class="voice-engine-btn is-active" id="btnEngineEdgeTTS" type="button">
-            <span class="v-icon">🌐</span>
-            <div class="v-meta">
-              <strong>Edge-TTS Neural</strong>
-              <small>Free • Unlimited • 400+ voices</small>
-            </div>
-            <span class="pill ok" style="font-size:0.65rem">FREE</span>
-          </button>
-
-          <button class="voice-engine-btn" id="btnEngineCloning" type="button">
-            <span class="v-icon">🧬</span>
-            <div class="v-meta">
-              <strong>Voice Cloning</strong>
-              <small>Upload 10-30s audio sample</small>
-            </div>
-            <span class="pill" style="font-size:0.65rem;background:#8b5cf6">BETA</span>
-          </button>
-
-          <button class="voice-engine-btn" id="btnEngineElevenLabs" type="button">
-            <span class="v-icon">✨</span>
-            <div class="v-meta">
-              <strong>ElevenLabs (BYOK)</strong>
-              <small>17,020+ voices library</small>
-            </div>
-            <span class="pill" style="font-size:0.65rem;border:1px solid rgba(255,255,255,0.2)">PRO</span>
-          </button>
+    <!-- Top Sub-Pages Navigation Switcher (Tabs inside AI Voice Studio) -->
+    <div class="voice-subpage-nav">
+      <button class="v-subtab is-active" id="subtabEdgeTTS" type="button">
+        <span class="vst-icon">🌐</span>
+        <div class="vst-text">
+          <strong>Free Edge-TTS Studio</strong>
+          <small>400+ Free Neural Voices • Emotion Tags</small>
         </div>
+        <span class="pill ok" style="font-size:0.65rem">100% FREE</span>
+      </button>
 
-        <!-- Voice Cloning Upload Box (Visible when cloning engine is active) -->
-        <div class="voice-clone-box" id="voiceCloneBox" hidden>
-          <div class="card-head-simple" style="margin-bottom:0.5rem">
-            <strong style="font-size:0.85rem">🧬 Speaker Audio Sample</strong>
+      <button class="v-subtab" id="subtabCloning" type="button">
+        <span class="vst-icon">🧬</span>
+        <div class="vst-text">
+          <strong>Voice Cloning Workspace</strong>
+          <small>Upload 10-30s Audio • Mimic Voice</small>
+        </div>
+        <span class="pill" style="font-size:0.65rem;background:#8b5cf6">AI CLONER</span>
+      </button>
+
+      <button class="v-subtab" id="subtabElevenLabs" type="button">
+        <span class="vst-icon">✨</span>
+        <div class="vst-text">
+          <strong>ElevenLabs Workspace</strong>
+          <small>17,020+ Voices • v3 Turbo Expressive</small>
+        </div>
+        <span class="pill" style="font-size:0.65rem;border:1px solid rgba(255,255,255,0.2)">PRO (BYOK)</span>
+      </button>
+    </div>
+
+    <!-- ==================== SUB-PAGE 1: EDGE-TTS FREE STUDIO ==================== -->
+    <div class="v-subpage" id="pageEdgeTTS">
+      <div class="voice-studio-grid">
+
+        <!-- Left Mini Info Panel -->
+        <aside class="voice-sidebar">
+          <div class="voice-sidebar-card">
+            <strong style="color:#c4b5fd">⚡ 100% Free & Unlimited</strong>
+            <p class="hint" style="font-size:0.75rem;margin-top:0.3rem">
+              Powered by Microsoft Neural Speech. No character limits, no API fees, and zero credit expiration.
+            </p>
           </div>
-          <label class="drop" id="cloneAudioDrop" style="padding:1rem 0.5rem">
-            <input type="file" id="cloneAudioInput" accept="audio/*" hidden>
-            <span class="drop-icon" style="font-size:1.5rem">🎤</span>
-            <span style="font-size:0.8rem">Upload 10-30s sample (.mp3/.wav)</span>
-            <small class="hint" id="cloneSampleStatus">No speaker sample chosen</small>
-          </label>
-        </div>
 
-        <!-- ElevenLabs API Key Box (Visible when ElevenLabs is active) -->
-        <div class="eleven-key-box" id="elevenKeyBox" hidden>
-          <label class="field">
-            <span style="font-size:0.8rem">ElevenLabs API Key</span>
-            <input type="password" id="inputElevenApiKey" placeholder="sk_..." autocomplete="off">
-          </label>
-          <small class="hint">Your key is stored locally in your browser session.</small>
-        </div>
-
-        <div class="voice-sidebar-card">
-          <strong>💡 Pro Tip</strong>
-          <p class="hint" style="font-size:0.75rem;margin-top:0.3rem">
-            Use bracket tags like <code>[laugh]</code> or <code>[pause: 1s]</code> in your script. The AI automatically pauses or generates natural conversational inflection!
-          </p>
-        </div>
-      </aside>
-
-      <!-- COLUMN 2: CENTER SCRIPT CANVAS & EMOTIONS BAR -->
-      <main class="voice-canvas">
-
-        <!-- Quick Scenario Chips -->
-        <div class="scenario-bar">
-          <span class="scenario-lbl">Get started with:</span>
-          <div class="scenario-chips" id="scenarioChipsContainer">
-            <button class="scenario-chip" data-scenario="youtube_intro" type="button">📺 YouTube Intro</button>
-            <button class="scenario-chip" data-scenario="story_narration" type="button">📖 Story Narration</button>
-            <button class="scenario-chip" data-scenario="faceless_tiktok" type="button">📱 Faceless TikTok</button>
-            <button class="scenario-chip" data-scenario="islamic_bayan" type="button">🕌 Islamic Bayan</button>
-            <button class="scenario-chip" data-scenario="product_demo" type="button">🚀 Product Demo</button>
-            <button class="scenario-chip" data-scenario="motivational" type="button">🔥 Motivational</button>
+          <div class="voice-sidebar-card">
+            <strong>🎭 Paralinguistic Tags</strong>
+            <p class="hint" style="font-size:0.75rem;margin-top:0.3rem">
+              Click any emotion button above the script to insert human-like laughter <code>[laugh]</code>, deep breaths <code>[sigh]</code>, or dramatic waqfa <code>[pause: 1s]</code>.
+            </p>
           </div>
-        </div>
 
-        <!-- Interactive Clickable Emotion & Vocal Tags Bar -->
-        <div class="emotion-tags-bar">
-          <span class="emotion-bar-title">🎭 Insert Emotion / Vocal Cue at Cursor:</span>
-          <div class="emotion-tags-list" id="emotionTagsList">
-            <button class="emotion-tag-btn" data-tag="[laugh]" type="button" title="Light conversational laugh">😊 [laugh]</button>
-            <button class="emotion-tag-btn" data-tag="[sigh]" type="button" title="Deep breath / sigh">💨 [sigh]</button>
-            <button class="emotion-tag-btn" data-tag="[pause: 1s]" type="button" title="1 Second dramatic pause">⏳ [pause: 1s]</button>
-            <button class="emotion-tag-btn" data-tag="[whisper]" type="button" title="Soft whisper / serious">🤫 [whisper]</button>
-            <button class="emotion-tag-btn" data-tag="[gasp]" type="button" title="Surprised breath">😮 [gasp]</button>
-            <button class="emotion-tag-btn" data-tag="[clear throat]" type="button" title="Conversational throat clear">🗣️ [clear throat]</button>
-            <button class="emotion-tag-btn" data-tag="[excited]" type="button" title="High energy excitement">🔥 [excited]</button>
-            <button class="emotion-tag-btn" data-tag="[sad]" type="button" title="Somber tone">😢 [sad]</button>
-            <button class="emotion-tag-btn" data-tag="[shush]" type="button" title="Quiet hush">🤐 [shush]</button>
-            <button class="emotion-tag-btn" data-tag="[cough]" type="button" title="Subtle micro-cough">🤧 [cough]</button>
+          <div class="voice-sidebar-card">
+            <strong>🎬 1-Click Video Sync</strong>
+            <p class="hint" style="font-size:0.75rem;margin-top:0.3rem">
+              Audio is automatically converted into word-by-word timestamps and sent directly into your video editor timeline!
+            </p>
           </div>
-        </div>
+        </aside>
 
-        <!-- Script Textarea Box -->
-        <div class="script-editor-box">
-          <textarea id="ttsScriptTextarea" class="script-textarea" placeholder="Write or paste your narration script here... Click any emotion tag above to insert natural pauses or laughter right into your script!" rows="12"></textarea>
-          <div class="script-footer">
-            <div class="script-char-count">
-              <span id="ttsCharCount">0</span> / 20,000 characters
-            </div>
-            <div class="script-actions-row">
-              <button class="btn btn-ghost btn-sm" id="btnTtsClearScript" type="button">Clear</button>
-              <button class="btn btn-primary" id="btnTtsGenerate" type="button">
-                <span id="ttsBtnIcon">✨</span>
-                <span id="ttsBtnText">Generate Speech</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Live Generation Result & 1-Click Timeline Bridge Card -->
-        <div class="tts-result-card" id="ttsResultCard" hidden>
-          <div class="result-header">
-            <div class="result-info">
-              <strong style="color:var(--text);font-size:0.95rem">🎉 Voice Synthesis Complete!</strong>
-              <small class="hint" id="ttsResultMeta">Duration: 0.0s • 0 words generated with timestamps</small>
-            </div>
-            <div class="result-actions">
-              <button class="btn btn-primary" id="btnTtsSendToTimeline" type="button" style="background:linear-gradient(135deg,#10b981,#059669);border:none">
-                🎬 Send to Video Studio Timeline
-              </button>
+        <!-- Center Script Canvas -->
+        <main class="voice-canvas">
+          <!-- Quick Scenario Chips -->
+          <div class="scenario-bar">
+            <span class="scenario-lbl">Get started with:</span>
+            <div class="scenario-chips" id="scenarioChipsContainer">
+              <button class="scenario-chip" data-scenario="youtube_intro" type="button">📺 YouTube Intro</button>
+              <button class="scenario-chip" data-scenario="story_narration" type="button">📖 Story Narration</button>
+              <button class="scenario-chip" data-scenario="faceless_tiktok" type="button">📱 Faceless TikTok</button>
+              <button class="scenario-chip" data-scenario="islamic_bayan" type="button">🕌 Islamic Bayan</button>
+              <button class="scenario-chip" data-scenario="product_demo" type="button">🚀 Product Demo</button>
+              <button class="scenario-chip" data-scenario="motivational" type="button">🔥 Motivational</button>
             </div>
           </div>
 
-          <!-- Audio Player Row -->
-          <div class="tts-audio-player-row">
-            <audio id="ttsAudioPlayer" controls style="width:100%;height:38px;outline:none"></audio>
-            <div style="display:flex;gap:0.5rem;margin-top:0.6rem">
-              <a id="ttsDownloadAudioLink" class="btn btn-ghost btn-sm" href="#" download="ai_voice.mp3">📥 Download MP3</a>
-              <a id="ttsDownloadSrtLink" class="btn btn-ghost btn-sm" href="#" download="subtitles.srt">📄 Download Subtitles (SRT)</a>
+          <!-- Interactive Clickable Emotion & Vocal Tags Bar -->
+          <div class="emotion-tags-bar">
+            <span class="emotion-bar-title">🎭 Click to Insert Emotion / Vocal Cue at Cursor:</span>
+            <div class="emotion-tags-list" id="emotionTagsList">
+              <button class="emotion-tag-btn" data-tag="[laugh]" type="button" title="Light conversational laugh">😊 [laugh]</button>
+              <button class="emotion-tag-btn" data-tag="[sigh]" type="button" title="Deep breath / sigh">💨 [sigh]</button>
+              <button class="emotion-tag-btn" data-tag="[pause: 1s]" type="button" title="1 Second dramatic pause">⏳ [pause: 1s]</button>
+              <button class="emotion-tag-btn" data-tag="[whisper]" type="button" title="Soft whisper / serious">🤫 [whisper]</button>
+              <button class="emotion-tag-btn" data-tag="[gasp]" type="button" title="Surprised breath">😮 [gasp]</button>
+              <button class="emotion-tag-btn" data-tag="[clear throat]" type="button" title="Conversational throat clear">🗣️ [clear throat]</button>
+              <button class="emotion-tag-btn" data-tag="[excited]" type="button" title="High energy excitement">🔥 [excited]</button>
+              <button class="emotion-tag-btn" data-tag="[sad]" type="button" title="Somber tone">😢 [sad]</button>
+              <button class="emotion-tag-btn" data-tag="[shush]" type="button" title="Quiet hush">🤐 [shush]</button>
+              <button class="emotion-tag-btn" data-tag="[cough]" type="button" title="Subtle micro-cough">🤧 [cough]</button>
             </div>
           </div>
 
-          <!-- Word Timestamps Live Preview -->
-          <details class="tts-words-details" style="margin-top:0.8rem">
-            <summary style="cursor:pointer;color:var(--text-dim);font-size:0.8rem">View Word-by-Word Timestamps (<span id="ttsWordsCount">0</span> words)</summary>
-            <div class="tts-words-cloud" id="ttsWordsCloud" style="max-height:120px;overflow-y:auto;margin-top:0.5rem;padding:0.5rem;background:rgba(0,0,0,0.2);border-radius:6px"></div>
-          </details>
-        </div>
+          <!-- Script Textarea Box -->
+          <div class="script-editor-box">
+            <textarea id="ttsScriptTextarea" class="script-textarea" placeholder="Write or paste your narration script here... Click any emotion tag above to insert natural pauses or laughter right into your script!" rows="12"></textarea>
+            <div class="script-footer">
+              <div class="script-char-count">
+                <span id="ttsCharCount">0</span> / 20,000 characters
+              </div>
+              <div class="script-actions-row">
+                <button class="btn btn-ghost btn-sm" id="btnTtsClearScript" type="button">Clear</button>
+                <button class="btn btn-primary" id="btnTtsGenerate" type="button">
+                  <span id="ttsBtnIcon">✨</span>
+                  <span id="ttsBtnText">Generate Speech</span>
+                </button>
+              </div>
+            </div>
+          </div>
 
-      </main>
+          <!-- Live Generation Result & 1-Click Timeline Bridge Card -->
+          <div class="tts-result-card" id="ttsResultCard" hidden>
+            <div class="result-header">
+              <div class="result-info">
+                <strong style="color:var(--text);font-size:0.95rem">🎉 Voice Synthesis Complete!</strong>
+                <small class="hint" id="ttsResultMeta">Duration: 0.0s • 0 words generated with timestamps</small>
+              </div>
+              <div class="result-actions">
+                <button class="btn btn-primary" id="btnTtsSendToTimeline" type="button" style="background:linear-gradient(135deg,#10b981,#059669);border:none">
+                  🎬 Send to Video Studio Timeline
+                </button>
+              </div>
+            </div>
 
-      <!-- COLUMN 3: RIGHT INSPECTOR PANEL (Voice Settings & History) -->
-      <aside class="voice-inspector">
-        <div class="tabs" style="margin-bottom:1rem">
-          <button class="tab is-active" id="tabVoiceSettings" type="button">⚙️ Settings</button>
-          <button class="tab" id="tabVoiceHistory" type="button">🕒 History</button>
-        </div>
+            <!-- Audio Player Row -->
+            <div class="tts-audio-player-row">
+              <audio id="ttsAudioPlayer" controls style="width:100%;height:38px;outline:none"></audio>
+              <div style="display:flex;gap:0.5rem;margin-top:0.6rem">
+                <a id="ttsDownloadAudioLink" class="btn btn-ghost btn-sm" href="#" download="ai_voice.mp3">📥 Download MP3</a>
+                <a id="ttsDownloadSrtLink" class="btn btn-ghost btn-sm" href="#" download="subtitles.srt">📄 Download Subtitles (SRT)</a>
+              </div>
+            </div>
 
-        <!-- Tab 1: Voice Settings Pane -->
-        <div class="inspector-pane" id="paneVoiceSettings">
-          <!-- Voice Selector Card -->
-          <div class="voice-select-box">
-            <label class="field">
-              <span>Selected Voice</span>
-              <select id="ttsVoiceSelect" class="voice-dropdown" style="padding:0.6rem;font-weight:600"></select>
-            </label>
-            <div class="voice-preview-card" id="voicePreviewCard">
-              <div class="vpc-info">
-                <span class="vpc-flag" id="vpcFlag">🇵🇰</span>
-                <div>
-                  <strong id="vpcName">Asad Neural</strong>
-                  <small id="vpcCategory">Urdu (Pakistan) • Male</small>
+            <!-- Word Timestamps Live Preview -->
+            <details class="tts-words-details" style="margin-top:0.8rem">
+              <summary style="cursor:pointer;color:var(--text-dim);font-size:0.8rem">View Word-by-Word Timestamps (<span id="ttsWordsCount">0</span> words)</summary>
+              <div class="tts-words-cloud" id="ttsWordsCloud" style="max-height:120px;overflow-y:auto;margin-top:0.5rem;padding:0.5rem;background:rgba(0,0,0,0.2);border-radius:6px"></div>
+            </details>
+          </div>
+        </main>
+
+        <!-- Right Inspector Panel -->
+        <aside class="voice-inspector">
+          <div class="tabs" style="margin-bottom:1rem">
+            <button class="tab is-active" id="tabVoiceSettings" type="button">⚙️ Settings</button>
+            <button class="tab" id="tabVoiceHistory" type="button">🕒 History</button>
+          </div>
+
+          <!-- Tab 1: Voice Settings Pane -->
+          <div class="inspector-pane" id="paneVoiceSettings">
+            <!-- Filterable Voice Selector Card Trigger -->
+            <div class="voice-select-box">
+              <div class="card-head-simple" style="margin-bottom:0.4rem">
+                <span style="font-size:0.75rem;font-weight:700;color:var(--text-dim)">SELECTED VOICE</span>
+                <button class="btn btn-ghost btn-xs" id="btnChangeVoiceModal" type="button" style="color:#c4b5fd;font-weight:600">🔍 Filter Voices (400+) →</button>
+              </div>
+              <div class="voice-selector-card-btn" id="voiceCardTrigger" title="Click to open Voice Library with filters">
+                <div class="vpc-info">
+                  <span class="vpc-flag" id="vpcFlag">🇵🇰</span>
+                  <div>
+                    <div style="display:flex;align-items:center;gap:0.4rem">
+                      <strong id="vpcName">Asad Neural</strong>
+                      <span id="vpcStarIcon" title="Toggle Favorite" style="cursor:pointer;font-size:0.9rem">⭐</span>
+                    </div>
+                    <small id="vpcCategory">Urdu (Pakistan) • Male • Storyteller / Bayan</small>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.4rem">
+                  <button class="icon-btn" id="btnPreviewVoiceAudio" type="button" title="Listen to Voice Sample">▶</button>
+                  <span style="color:var(--text-dim);font-size:0.85rem">❯</span>
                 </div>
               </div>
-              <button class="icon-btn" id="btnPreviewVoiceAudio" type="button" title="Listen to Voice Sample">▶</button>
+            </div>
+
+            <!-- Emotion Tone Dropdown -->
+            <label class="field" style="margin-top:1rem">
+              <span>Emotion / Vocal Tone</span>
+              <select id="ttsEmotionSelect">
+                <option value="neutral">😐 Neutral (Default)</option>
+                <option value="cheerful">😄 Cheerful & Friendly</option>
+                <option value="excited">🔥 High Energy & Excited</option>
+                <option value="sad">😢 Serious / Emotional</option>
+                <option value="whispering">🤫 Whispering & Confidential</option>
+                <option value="documentary">📜 Documentary / Storyteller</option>
+              </select>
+            </label>
+
+            <!-- Sliders: Speed & Pitch -->
+            <div class="voice-slider-group">
+              <div class="slider-row">
+                <div class="slider-label">
+                  <span>Speed</span>
+                  <strong id="valTtsSpeed">1.0x</strong>
+                </div>
+                <input type="range" id="sliderTtsSpeed" min="0.5" max="2.0" step="0.05" value="1.0">
+              </div>
+
+              <div class="slider-row">
+                <div class="slider-label">
+                  <span>Pitch</span>
+                  <strong id="valTtsPitch">0 Hz</strong>
+                </div>
+                <input type="range" id="sliderTtsPitch" min="-20" max="20" step="1" value="0">
+              </div>
+
+              <div class="slider-row">
+                <div class="slider-label">
+                  <span>Expressiveness / Emotion Depth</span>
+                  <strong id="valTtsExpress">85%</strong>
+                </div>
+                <input type="range" id="sliderTtsExpress" min="0" max="100" step="5" value="85">
+              </div>
+
+              <div class="slider-row">
+                <div class="slider-label">
+                  <span>Volume Boost</span>
+                  <strong id="valTtsVolume">0 dB</strong>
+                </div>
+                <input type="range" id="sliderTtsVolume" min="-6" max="6" step="1" value="0">
+              </div>
+            </div>
+
+            <div class="voice-credit-pill">
+              <span class="vcp-icon">✨</span>
+              <div class="vcp-text">
+                <strong>Unlimited Free Generations</strong>
+                <small>Zero limits on Microsoft Edge-TTS</small>
+              </div>
             </div>
           </div>
 
-          <!-- Emotion Tone Dropdown -->
-          <label class="field" style="margin-top:1rem">
-            <span>Emotion / Vocal Tone</span>
-            <select id="ttsEmotionSelect">
-              <option value="neutral">😐 Neutral (Default)</option>
-              <option value="cheerful">😄 Cheerful & Friendly</option>
-              <option value="excited">🔥 High Energy & Excited</option>
-              <option value="sad">😢 Serious / Emotional</option>
-              <option value="whispering">🤫 Whispering & Confidential</option>
-              <option value="documentary">📜 Documentary / Storyteller</option>
-            </select>
-          </label>
+          <!-- Tab 2: History Pane -->
+          <div class="inspector-pane" id="paneVoiceHistory" hidden>
+            <div class="card-head-simple">
+              <span style="font-size:0.85rem">Recent Voiceovers</span>
+              <button class="btn btn-ghost btn-sm" id="btnTtsClearHistory" type="button">Clear</button>
+            </div>
+            <div class="tts-history-list" id="ttsHistoryList">
+              <p class="hint" style="text-align:center;padding:1.5rem 0">No audio generated in this session yet.</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div> <!-- END #pageEdgeTTS -->
 
-          <!-- Sliders: Speed & Pitch -->
+    <!-- ==================== SUB-PAGE 2: VOICE CLONING WORKSPACE ==================== -->
+    <div class="v-subpage" id="pageCloning" hidden>
+      <div class="voice-studio-grid">
+
+        <!-- Left: Upload sample & speaker profiles -->
+        <aside class="voice-sidebar">
+          <div class="voice-clone-box">
+            <div class="card-head-simple" style="margin-bottom:0.5rem">
+              <strong style="font-size:0.85rem">🧬 Speaker Audio Sample</strong>
+            </div>
+            <label class="drop" id="cloneAudioDrop" style="padding:1.2rem 0.5rem">
+              <input type="file" id="cloneAudioInput" accept="audio/*" hidden>
+              <span class="drop-icon" style="font-size:1.8rem">🎤</span>
+              <strong style="font-size:0.85rem;display:block;margin-top:0.3rem">Upload 10-30s sample</strong>
+              <small class="hint" style="font-size:0.75rem">.mp3 or .wav clear speech</small>
+              <div id="cloneSampleStatus" style="font-size:0.78rem;margin-top:0.4rem;color:#34d399">No sample uploaded</div>
+            </label>
+          </div>
+
+          <div class="voice-sidebar-card">
+            <strong>📋 Before you start:</strong>
+            <p class="hint" style="font-size:0.75rem;margin-top:0.3rem">
+              Upload a clean, noise-free recording of 10-30 seconds. Generated voice-overs are linked directly to your current project timeline.
+            </p>
+          </div>
+
+          <div class="voice-sidebar-card">
+            <strong>📁 Your Cloned Profiles:</strong>
+            <div id="clonedProfilesList" style="margin-top:0.4rem;font-size:0.75rem;color:var(--text-dim)">
+              1 profile active: <em>Session Speaker #1</em>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Center: Script Editor with Quick Tags -->
+        <main class="voice-canvas">
+          <div class="scenario-bar">
+            <span class="scenario-lbl">Quick Tags:</span>
+            <div class="scenario-chips">
+              <button class="scenario-chip" data-scenario="youtube_intro" type="button">YouTube Intro</button>
+              <button class="scenario-chip" data-scenario="story_narration" type="button">Story Narration</button>
+              <button class="scenario-chip" data-scenario="faceless_tiktok" type="button">Podcast Intro</button>
+              <button class="scenario-chip" data-scenario="motivational" type="button">Language Practice</button>
+              <button class="scenario-chip" data-scenario="product_demo" type="button">Product Demo</button>
+            </div>
+          </div>
+
+          <div class="script-editor-box">
+            <textarea id="cloneScriptTextarea" class="script-textarea" placeholder="Write or paste your script to speak in your cloned voice..." rows="12"></textarea>
+            <div class="script-footer">
+              <div class="script-char-count">
+                <span id="cloneCharCount">0</span> / 20,000 characters
+              </div>
+              <div class="script-actions-row">
+                <button class="btn btn-ghost btn-sm" id="btnCloneClearScript" type="button">Clear</button>
+                <button class="btn btn-primary" id="btnCloneGenerate" type="button" style="background:#8b5cf6">
+                  <span>🧬</span> Generate Cloned Speech
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Result card for cloned voice -->
+          <div class="tts-result-card" id="cloneResultCard" hidden>
+            <div class="result-header">
+              <div class="result-info">
+                <strong style="color:var(--text)">🎉 Cloned Voice Ready!</strong>
+                <small class="hint" id="cloneResultMeta">Duration: 0.0s</small>
+              </div>
+              <button class="btn btn-primary" id="btnCloneSendToTimeline" type="button" style="background:linear-gradient(135deg,#10b981,#059669);border:none">
+                🎬 Send to Video Timeline
+              </button>
+            </div>
+            <audio id="cloneAudioPlayer" controls style="width:100%;height:38px;outline:none"></audio>
+          </div>
+        </main>
+
+        <!-- Right: Cloning Voice Controls -->
+        <aside class="voice-inspector">
+          <h4 style="font-size:0.9rem;margin-bottom:0.8rem">Voice Controls</h4>
           <div class="voice-slider-group">
             <div class="slider-row">
               <div class="slider-label">
                 <span>Speed</span>
-                <strong id="valTtsSpeed">1.0x</strong>
+                <strong id="valCloneSpeed">1.0x</strong>
               </div>
-              <input type="range" id="sliderTtsSpeed" min="0.5" max="2.0" step="0.05" value="1.0">
+              <input type="range" id="sliderCloneSpeed" min="0.5" max="2.0" step="0.05" value="1.0">
             </div>
 
             <div class="slider-row">
               <div class="slider-label">
-                <span>Pitch</span>
-                <strong id="valTtsPitch">0 Hz</strong>
+                <span>Volume (dB)</span>
+                <strong id="valCloneVolume">0 dB</strong>
               </div>
-              <input type="range" id="sliderTtsPitch" min="-20" max="20" step="1" value="0">
+              <input type="range" id="sliderCloneVolume" min="-6" max="6" step="1" value="0">
             </div>
 
             <div class="slider-row">
               <div class="slider-label">
-                <span>Expressiveness / Emotion Depth</span>
-                <strong id="valTtsExpress">85%</strong>
+                <span>Expressiveness</span>
+                <strong id="valCloneExpress">0.7</strong>
               </div>
-              <input type="range" id="sliderTtsExpress" min="0" max="100" step="5" value="85">
+              <input type="range" id="sliderCloneExpress" min="0" max="1" step="0.05" value="0.7">
             </div>
 
             <div class="slider-row">
               <div class="slider-label">
-                <span>Volume Boost</span>
-                <strong id="valTtsVolume">0 dB</strong>
+                <span>Diversity / Similarity</span>
+                <strong id="valCloneDiversity">0.7</strong>
               </div>
-              <input type="range" id="sliderTtsVolume" min="-6" max="6" step="1" value="0">
+              <input type="range" id="sliderCloneDiversity" min="0" max="1" step="0.05" value="0.7">
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div> <!-- END #pageCloning -->
+
+    <!-- ==================== SUB-PAGE 3: ELEVENLABS PRO WORKSPACE ==================== -->
+    <div class="v-subpage" id="pageElevenLabs" hidden>
+      <div class="voice-studio-grid">
+
+        <!-- Left: API Key & Model Selector -->
+        <aside class="voice-sidebar">
+          <div class="eleven-key-box">
+            <label class="field">
+              <span style="font-weight:700">ElevenLabs API Key</span>
+              <input type="password" id="inputElevenApiKey" placeholder="sk_..." autocomplete="off">
+            </label>
+            <button class="btn btn-primary btn-sm btn-block" id="btnSaveElevenKey" type="button" style="margin-top:0.4rem">Save Key Locally</button>
+            <small class="hint" style="margin-top:0.3rem;display:block">Key is stored in your private browser session.</small>
+          </div>
+
+          <div class="voice-sidebar-card">
+            <strong>Model Selection</strong>
+            <label class="field" style="margin-top:0.4rem">
+              <select id="elevenModelSelect">
+                <option value="eleven_v3_turbo">Eleven v3 Turbo (Speed + Emotions)</option>
+                <option value="eleven_multilingual_v2">Eleven Multilingual v2</option>
+                <option value="eleven_turbo_v2_5">Eleven Turbo v2.5</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="voice-sidebar-card">
+            <strong>✨ 17,020+ Voices</strong>
+            <p class="hint" style="font-size:0.75rem;margin-top:0.3rem">
+              Access the entire public ElevenLabs library including British, American, and international accents.
+            </p>
+          </div>
+        </aside>
+
+        <!-- Center: Script Editor -->
+        <main class="voice-canvas">
+          <div class="script-editor-box">
+            <textarea id="elevenScriptTextarea" class="script-textarea" placeholder="Write or paste your script for ElevenLabs generation..." rows="12"></textarea>
+            <div class="script-footer">
+              <div class="script-char-count">
+                <span id="elevenCharCount">0</span> / 20,000 characters
+              </div>
+              <div class="script-actions-row">
+                <button class="btn btn-ghost btn-sm" id="btnElevenClearScript" type="button">Clear</button>
+                <button class="btn btn-primary" id="btnElevenGenerate" type="button">
+                  <span>✨</span> Generate with ElevenLabs
+                </button>
+              </div>
             </div>
           </div>
 
-          <div class="voice-credit-pill">
-            <span class="vcp-icon">✨</span>
-            <div class="vcp-text">
-              <strong>Unlimited Free Generations</strong>
-              <small>Zero limits on Microsoft Edge-TTS</small>
+          <div class="tts-result-card" id="elevenResultCard" hidden>
+            <div class="result-header">
+              <div class="result-info">
+                <strong style="color:var(--text)">🎉 ElevenLabs Generation Ready!</strong>
+                <small class="hint" id="elevenResultMeta">Duration: 0.0s</small>
+              </div>
+              <button class="btn btn-primary" id="btnElevenSendToTimeline" type="button" style="background:linear-gradient(135deg,#10b981,#059669);border:none">
+                🎬 Send to Video Timeline
+              </button>
+            </div>
+            <audio id="elevenAudioPlayer" controls style="width:100%;height:38px;outline:none"></audio>
+          </div>
+        </main>
+
+        <!-- Right: Voice selector & sliders -->
+        <aside class="voice-inspector">
+          <div class="voice-select-box">
+            <div class="card-head-simple" style="margin-bottom:0.4rem">
+              <span style="font-size:0.75rem;font-weight:700;color:var(--text-dim)">ELEVENLABS VOICE</span>
+              <button class="btn btn-ghost btn-xs" id="btnElevenChangeVoice" type="button" style="color:#c4b5fd;font-weight:600">Library ❯</button>
+            </div>
+            <div class="voice-selector-card-btn" id="elevenVoiceTrigger">
+              <div class="vpc-info">
+                <span class="vpc-flag">🇬🇧</span>
+                <div>
+                  <strong>Poppy</strong>
+                  <small>Bright and Dynamic • British Female</small>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Tab 2: History Pane -->
-        <div class="inspector-pane" id="paneVoiceHistory" hidden>
-          <div class="card-head-simple">
-            <span style="font-size:0.85rem">Recent Voiceovers</span>
-            <button class="btn btn-ghost btn-sm" id="btnTtsClearHistory" type="button">Clear</button>
+          <div class="voice-slider-group" style="margin-top:1rem">
+            <div class="slider-row">
+              <div class="slider-label">
+                <span>Stability</span>
+                <strong id="valElevenStability">85%</strong>
+              </div>
+              <input type="range" id="sliderElevenStability" min="0" max="100" step="5" value="85">
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label">
+                <span>Similarity Boost / Diversity</span>
+                <strong id="valElevenSim">75%</strong>
+              </div>
+              <input type="range" id="sliderElevenSim" min="0" max="100" step="5" value="75">
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label">
+                <span>Style Exaggeration</span>
+                <strong id="valElevenStyle">0%</strong>
+              </div>
+              <input type="range" id="sliderElevenStyle" min="0" max="100" step="5" value="0">
+            </div>
           </div>
-          <div class="tts-history-list" id="ttsHistoryList">
-            <p class="hint" style="text-align:center;padding:1.5rem 0">No audio generated in this session yet.</p>
-          </div>
-        </div>
+        </aside>
+      </div>
+    </div> <!-- END #pageElevenLabs -->
 
-      </aside>
-
-    </div>
   </section> <!-- END #panelVoiceStudio -->
+
 
 
   </div> <!-- END #mainContent -->
@@ -1452,6 +1673,75 @@
     <div id="projectList" class="mini-list"></div>
   </div>
 </div>
+
+<!-- ===================== ADVANCED FILTERABLE VOICE LIBRARY MODAL ===================== -->
+<div class="modal" id="voiceLibraryModal" hidden>
+  <div class="modal-box voice-library-dialog">
+    <header class="modal-head">
+      <div>
+        <h3 style="font-size:1.15rem;display:flex;align-items:center;gap:0.5rem">
+          <span>🎙️</span> <span>Select Voice Library</span>
+        </h3>
+        <small class="hint" id="vlibCountHint">400+ Neural Voices across 40+ languages</small>
+      </div>
+      <button class="icon-btn" id="voiceLibraryModalClose" type="button" title="Close">✕</button>
+    </header>
+
+    <!-- Search Input Row -->
+    <div class="vlib-search-box">
+      <span class="vlib-search-icon">🔍</span>
+      <input type="text" id="vlibSearchInput" placeholder="Search voices by name (e.g. Asad, Christopher), language, or country..." autocomplete="off">
+      <button class="btn btn-ghost btn-xs" id="btnVlibClearSearch" type="button" style="display:none">Clear</button>
+    </div>
+
+    <!-- Filter Toolbar (Gender, Favorites, Language) -->
+    <div class="vlib-filter-toolbar">
+      <!-- Gender Filter Tabs -->
+      <div class="vlib-filter-group">
+        <span class="vlib-filter-label">Gender:</span>
+        <div class="vlib-pill-tabs" id="vlibGenderTabs">
+          <button class="vlib-pill-btn is-active" data-gender="all" type="button">All Genders</button>
+          <button class="vlib-pill-btn" data-gender="Male" type="button">👨 Male</button>
+          <button class="vlib-pill-btn" data-gender="Female" type="button">👩 Female</button>
+        </div>
+      </div>
+
+      <!-- Favorites Filter Tab -->
+      <div class="vlib-filter-group">
+        <button class="vlib-fav-filter-btn" id="vlibBtnFavs" type="button" title="Show only starred voices">
+          <span>⭐ Favorites Only</span>
+          <span class="pill" id="vlibFavBadge" style="font-size:0.65rem;background:#f59e0b;color:#000;font-weight:700">0</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Country / Language Quick Filter Chips -->
+    <div class="vlib-languages-bar" id="vlibLangChipsBar">
+      <button class="vlib-lang-chip is-active" data-lang="all" type="button">All Languages</button>
+      <button class="vlib-lang-chip" data-lang="ur" type="button">🇵🇰 Urdu (Pakistan)</button>
+      <button class="vlib-lang-chip" data-lang="en-us" type="button">🇺🇸 English (US)</button>
+      <button class="vlib-lang-chip" data-lang="en-gb" type="button">🇬🇧 English (UK)</button>
+      <button class="vlib-lang-chip" data-lang="hi" type="button">🇮🇳 Hindi / Indian</button>
+      <button class="vlib-lang-chip" data-lang="ar" type="button">🇸🇦 Arabic</button>
+      <button class="vlib-lang-chip" data-lang="ko" type="button">🇰🇷 Korean</button>
+      <button class="vlib-lang-chip" data-lang="tr" type="button">🇹🇷 Turkish</button>
+    </div>
+
+    <!-- Scrollable Voice Cards Grid -->
+    <div class="vlib-grid-container" id="vlibGridContainer">
+      <div class="vlib-cards-grid" id="vlibCardsGrid">
+        <!-- Populated dynamically with voice cards -->
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <footer class="modal-foot" style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1.25rem;border-top:1px solid var(--line)">
+      <span class="hint" id="vlibStatusCounter">Showing 13 voices</span>
+      <button class="btn btn-ghost btn-sm" id="btnVlibCloseFooter" type="button">Close</button>
+    </footer>
+  </div>
+</div>
+
 
 <div id="toasts" class="toasts"></div>
 

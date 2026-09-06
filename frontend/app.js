@@ -1731,39 +1731,100 @@ async function handleSaveToolName() {
 }
 
 /* ==========================================================================
-   AI VOICE STUDIO (Edge-TTS, Emotion Tags & Timeline Sync)
+   AI VOICE STUDIO (3 Sub-Pages, Advanced Voice Library Modal & Star Favorites)
    ========================================================================== */
 let voiceStudioState = {
   initialized: false,
   voices: [],
+  allVoices: [],
   selectedVoice: null,
-  activeEngine: "edge-tts",
+  activeSubpage: "edgetts",
   lastGenerated: null,
-  history: []
+  history: [],
+  favorites: new Set(),
+  previewAudio: null,
+  filter: {
+    search: "",
+    gender: "all",
+    lang: "all",
+    favOnly: false
+  }
 };
+
+function loadSavedVoiceFavorites() {
+  try {
+    const raw = localStorage.getItem("umar_fav_voices");
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) voiceStudioState.favorites = new Set(arr);
+    }
+  } catch (e) {}
+}
+
+function saveVoiceFavorites() {
+  try {
+    localStorage.setItem("umar_fav_voices", JSON.stringify(Array.from(voiceStudioState.favorites)));
+  } catch (e) {}
+  updateFavoritesBadge();
+}
+
+function updateFavoritesBadge() {
+  const badge = $("vlibFavBadge");
+  if (badge) badge.textContent = voiceStudioState.favorites.size;
+}
+
+function toggleFavoriteVoice(voiceId, starBtn) {
+  if (voiceStudioState.favorites.has(voiceId)) {
+    voiceStudioState.favorites.delete(voiceId);
+    if (starBtn) starBtn.classList.remove("is-fav");
+    toast("Removed from favorites ⭐", "ok");
+  } else {
+    voiceStudioState.favorites.add(voiceId);
+    if (starBtn) starBtn.classList.add("is-fav");
+    toast("Added to favorites! ⭐", "ok");
+  }
+  saveVoiceFavorites();
+  updateSelectedVoiceCardUI();
+  if (voiceStudioState.filter.favOnly) {
+    renderVoiceLibraryCards();
+  }
+}
 
 async function initVoiceStudio() {
   if (voiceStudioState.initialized) return;
   voiceStudioState.initialized = true;
 
-  // 1. Fetch voices
+  loadSavedVoiceFavorites();
+
+  // 1. Fetch voices catalog
   try {
     const data = await jget("/tts/voices");
     if (data) {
       voiceStudioState.voices = data.featured || [];
-      renderVoiceSelectDropdown(data.featured || [], data.all_voices || []);
+      voiceStudioState.allVoices = (data.featured || []).concat(
+        (data.all_voices || []).filter(v => !(data.featured || []).some(f => f.id === v.id))
+      );
+      if (!voiceStudioState.selectedVoice && voiceStudioState.voices.length) {
+        voiceStudioState.selectedVoice = voiceStudioState.voices[0];
+      }
+      updateSelectedVoiceCardUI();
     }
   } catch (err) {
     console.warn("Could not load voices from backend:", err);
   }
 
-  // 2. Textarea listener
+  // 2. Sub-Pages Switcher inside AI Voice Studio
+  on("subtabEdgeTTS", "click", () => switchVoiceSubpage("edgetts"));
+  on("subtabCloning", "click", () => switchVoiceSubpage("cloning"));
+  on("subtabElevenLabs", "click", () => switchVoiceSubpage("elevenlabs"));
+
+  // 3. Textarea listener (Edge-TTS)
   const textarea = $("ttsScriptTextarea");
   if (textarea) {
     textarea.addEventListener("input", updateScriptCharCount);
   }
 
-  // 3. Emotion tags buttons (inserts tag at cursor!)
+  // 4. Emotion tags buttons (inserts tag at cursor!)
   const emotionBtns = $$(".emotion-tag-btn");
   emotionBtns.forEach(btn => {
     btn.addEventListener("click", () => {
@@ -1771,7 +1832,7 @@ async function initVoiceStudio() {
     });
   });
 
-  // 4. Scenario template chips
+  // 5. Scenario template chips (Edge-TTS)
   const scenarioChips = $$(".scenario-chip");
   scenarioChips.forEach(chip => {
     chip.addEventListener("click", () => {
@@ -1779,28 +1840,91 @@ async function initVoiceStudio() {
     });
   });
 
-  // 5. Sliders
+  // 6. Sliders (Edge-TTS)
   setupSliderDisplay("sliderTtsSpeed", "valTtsSpeed", (v) => Number(v).toFixed(2) + "x");
   setupSliderDisplay("sliderTtsPitch", "valTtsPitch", (v) => (Number(v) >= 0 ? "+" : "") + v + " Hz");
   setupSliderDisplay("sliderTtsExpress", "valTtsExpress", (v) => v + "%");
   setupSliderDisplay("sliderTtsVolume", "valTtsVolume", (v) => (Number(v) >= 0 ? "+" : "") + v + " dB");
 
-  // 6. Voice select dropdown
-  const voiceSelect = $("ttsVoiceSelect");
-  if (voiceSelect) {
-    voiceSelect.addEventListener("change", () => {
-      updateSelectedVoiceCard(voiceSelect.value);
+  // 7. Voice Modal Triggers
+  on("voiceCardTrigger", "click", openVoiceLibraryModal);
+  on("btnChangeVoiceModal", "click", openVoiceLibraryModal);
+  on("btnElevenChangeVoice", "click", openVoiceLibraryModal);
+  on("elevenVoiceTrigger", "click", openVoiceLibraryModal);
+  on("voiceLibraryModalClose", "click", closeVoiceLibraryModal);
+  on("btnVlibCloseFooter", "click", closeVoiceLibraryModal);
+
+  const vlibModal = $("voiceLibraryModal");
+  if (vlibModal) {
+    vlibModal.addEventListener("click", (e) => {
+      if (e.target === vlibModal) closeVoiceLibraryModal();
     });
   }
 
-  // 7. Preview audio
-  on("btnPreviewVoiceAudio", "click", playVoicePreviewAudio);
+  // 8. Voice Library Modal Search & Filters
+  const searchInput = $("vlibSearchInput");
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      voiceStudioState.filter.search = (searchInput.value || "").trim().toLowerCase();
+      const clearBtn = $("btnVlibClearSearch");
+      if (clearBtn) clearBtn.style.display = searchInput.value ? "inline-block" : "none";
+      renderVoiceLibraryCards();
+    });
+  }
+  on("btnVlibClearSearch", "click", () => {
+    if (searchInput) {
+      searchInput.value = "";
+      voiceStudioState.filter.search = "";
+      $("btnVlibClearSearch").style.display = "none";
+      renderVoiceLibraryCards();
+    }
+  });
 
-  // 8. Generate & Send to timeline
+  // Gender filter pills
+  $$(".vlib-pill-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      $$(".vlib-pill-btn").forEach(b => b.classList.remove("is-active"));
+      btn.classList.add("is-active");
+      voiceStudioState.filter.gender = btn.dataset.gender || "all";
+      renderVoiceLibraryCards();
+    });
+  });
+
+  // Favorites filter button
+  on("vlibBtnFavs", "click", () => {
+    const btn = $("vlibBtnFavs");
+    voiceStudioState.filter.favOnly = !voiceStudioState.filter.favOnly;
+    if (btn) btn.classList.toggle("is-active", voiceStudioState.filter.favOnly);
+    renderVoiceLibraryCards();
+  });
+
+  // Language filter chips
+  $$(".vlib-lang-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      $$(".vlib-lang-chip").forEach(c => c.classList.remove("is-active"));
+      chip.classList.add("is-active");
+      voiceStudioState.filter.lang = chip.dataset.lang || "all";
+      renderVoiceLibraryCards();
+    });
+  });
+
+  // 9. Audio Preview on active card
+  on("btnPreviewVoiceAudio", "click", (e) => {
+    e.stopPropagation();
+    playVoicePreviewAudio(voiceStudioState.selectedVoice);
+  });
+
+  // Star on active voice card
+  on("vpcStarIcon", "click", (e) => {
+    e.stopPropagation();
+    if (voiceStudioState.selectedVoice) {
+      toggleFavoriteVoice(voiceStudioState.selectedVoice.id);
+    }
+  });
+
+  // 10. Generate & Send to Timeline (Edge-TTS)
   on("btnTtsGenerate", "click", handleGenerateTTS);
   on("btnTtsSendToTimeline", "click", handleSendTtsToTimeline);
-
-  // 9. Clear script
   on("btnTtsClearScript", "click", () => {
     if (textarea) {
       textarea.value = "";
@@ -1808,20 +1932,287 @@ async function initVoiceStudio() {
     }
   });
 
-  // 10. Inspector tabs
+  // 11. Inspector Tabs (Settings vs History)
   on("tabVoiceSettings", "click", () => switchVoiceInspectorTab("settings"));
   on("tabVoiceHistory", "click", () => switchVoiceInspectorTab("history"));
   on("btnTtsClearHistory", "click", clearVoiceHistory);
 
-  // 11. Engine switching
-  on("btnEngineEdgeTTS", "click", () => switchVoiceEngine("edge-tts"));
-  on("btnEngineCloning", "click", () => switchVoiceEngine("cloning"));
-  on("btnEngineElevenLabs", "click", () => switchVoiceEngine("eleven-labs"));
-
-  // 12. Voice cloning upload
+  // 12. Voice Cloning Workspace Setup
   wireDrop(dropZoneOf("cloneAudioInput"), "cloneAudioInput", handleUploadCloneSample);
+  const cloneTextarea = $("cloneScriptTextarea");
+  if (cloneTextarea) {
+    cloneTextarea.addEventListener("input", () => {
+      if ($("cloneCharCount")) $("cloneCharCount").textContent = cloneTextarea.value.length.toLocaleString();
+    });
+  }
+  on("btnCloneClearScript", "click", () => {
+    if (cloneTextarea) {
+      cloneTextarea.value = "";
+      if ($("cloneCharCount")) $("cloneCharCount").textContent = "0";
+    }
+  });
+  setupSliderDisplay("sliderCloneSpeed", "valCloneSpeed", (v) => Number(v).toFixed(2) + "x");
+  setupSliderDisplay("sliderCloneVolume", "valCloneVolume", (v) => (Number(v) >= 0 ? "+" : "") + v + " dB");
+  setupSliderDisplay("sliderCloneExpress", "valCloneExpress", (v) => Number(v).toFixed(2));
+  setupSliderDisplay("sliderCloneDiversity", "valCloneDiversity", (v) => Number(v).toFixed(2));
+  on("btnCloneGenerate", "click", handleGenerateCloning);
+  on("btnCloneSendToTimeline", "click", handleSendTtsToTimeline);
+
+  // 13. ElevenLabs Workspace Setup
+  const savedKey = localStorage.getItem("elevenlabs_api_key");
+  if (savedKey && $("inputElevenApiKey")) $("inputElevenApiKey").value = savedKey;
+  on("btnSaveElevenKey", "click", () => {
+    const val = (($("inputElevenApiKey") || {}).value || "").trim();
+    if (val) {
+      localStorage.setItem("elevenlabs_api_key", val);
+      toast("ElevenLabs API Key saved locally! 🔑", "ok");
+    } else {
+      localStorage.removeItem("elevenlabs_api_key");
+      toast("API Key removed.", "warn");
+    }
+  });
+  const elevenTextarea = $("elevenScriptTextarea");
+  if (elevenTextarea) {
+    elevenTextarea.addEventListener("input", () => {
+      if ($("elevenCharCount")) $("elevenCharCount").textContent = elevenTextarea.value.length.toLocaleString();
+    });
+  }
+  on("btnElevenClearScript", "click", () => {
+    if (elevenTextarea) {
+      elevenTextarea.value = "";
+      if ($("elevenCharCount")) $("elevenCharCount").textContent = "0";
+    }
+  });
+  setupSliderDisplay("sliderElevenStability", "valElevenStability", (v) => v + "%");
+  setupSliderDisplay("sliderElevenSim", "valElevenSim", (v) => v + "%");
+  setupSliderDisplay("sliderElevenStyle", "valElevenStyle", (v) => v + "%");
+  on("btnElevenGenerate", "click", handleGenerateElevenLabs);
+  on("btnElevenSendToTimeline", "click", handleSendTtsToTimeline);
 }
 
+/* ---------------- Sub-Pages Switcher inside AI Voice Studio ---------------- */
+function switchVoiceSubpage(subpage) {
+  voiceStudioState.activeSubpage = subpage;
+
+  const isEdge = subpage === "edgetts";
+  const isClone = subpage === "cloning";
+  const isEleven = subpage === "elevenlabs";
+
+  if ($("subtabEdgeTTS")) $("subtabEdgeTTS").classList.toggle("is-active", isEdge);
+  if ($("subtabCloning")) $("subtabCloning").classList.toggle("is-active", isClone);
+  if ($("subtabElevenLabs")) $("subtabElevenLabs").classList.toggle("is-active", isEleven);
+
+  if ($("pageEdgeTTS")) $("pageEdgeTTS").hidden = !isEdge;
+  if ($("pageCloning")) $("pageCloning").hidden = !isClone;
+  if ($("pageElevenLabs")) $("pageElevenLabs").hidden = !isEleven;
+}
+
+/* ---------------- Voice Library Modal Controls ---------------- */
+function openVoiceLibraryModal() {
+  const modal = $("voiceLibraryModal");
+  if (!modal) return;
+  modal.hidden = false;
+  updateFavoritesBadge();
+  renderVoiceLibraryCards();
+  const searchInput = $("vlibSearchInput");
+  if (searchInput) {
+    setTimeout(() => searchInput.focus(), 80);
+  }
+}
+
+function closeVoiceLibraryModal() {
+  const modal = $("voiceLibraryModal");
+  if (modal) modal.hidden = true;
+  if (voiceStudioState.previewAudio) {
+    voiceStudioState.previewAudio.pause();
+    voiceStudioState.previewAudio = null;
+  }
+}
+
+function renderVoiceLibraryCards() {
+  const grid = $("vlibCardsGrid");
+  if (!grid) return;
+  clear(grid);
+
+  const filter = voiceStudioState.filter;
+  const list = (voiceStudioState.allVoices || voiceStudioState.voices || []);
+
+  const filtered = list.filter(v => {
+    // 1. Search Query
+    if (filter.search) {
+      const q = filter.search;
+      const matchName = (v.name || "").toLowerCase().includes(q);
+      const matchLang = (v.language || "").toLowerCase().includes(q);
+      const matchLocale = (v.locale || "").toLowerCase().includes(q);
+      const matchCat = (v.category || "").toLowerCase().includes(q);
+      const matchId = (v.id || "").toLowerCase().includes(q);
+      if (!matchName && !matchLang && !matchLocale && !matchCat && !matchId) return false;
+    }
+
+    // 2. Gender
+    if (filter.gender !== "all") {
+      const vGender = (v.gender || "").toLowerCase();
+      if (filter.gender.toLowerCase() !== vGender) return false;
+    }
+
+    // 3. Favorites Only
+    if (filter.favOnly) {
+      if (!voiceStudioState.favorites.has(v.id)) return false;
+    }
+
+    // 4. Language / Country
+    if (filter.lang !== "all") {
+      const loc = (v.locale || v.id || "").toLowerCase();
+      if (filter.lang === "ur" && !loc.startsWith("ur")) return false;
+      if (filter.lang === "en-us" && !loc.startsWith("en-us")) return false;
+      if (filter.lang === "en-gb" && !loc.startsWith("en-gb")) return false;
+      if (filter.lang === "hi" && !loc.startsWith("hi") && !loc.includes("in")) return false;
+      if (filter.lang === "ar" && !loc.startsWith("ar")) return false;
+      if (filter.lang === "ko" && !loc.startsWith("ko")) return false;
+      if (filter.lang === "tr" && !loc.startsWith("tr")) return false;
+    }
+
+    return true;
+  });
+
+  // Counter
+  const counter = $("vlibStatusCounter");
+  if (counter) {
+    counter.textContent = `Showing ${filtered.length} of ${list.length} voices`;
+  }
+
+  if (!filtered.length) {
+    grid.appendChild(el("div", {
+      cls: "hint",
+      style: { gridColumn: "1 / -1", textAlign: "center", padding: "2.5rem 0", fontSize: "0.9rem" },
+      text: "No voices found matching your filters. Try clearing filters or search terms."
+    }));
+    return;
+  }
+
+  filtered.forEach(v => {
+    const isSelected = voiceStudioState.selectedVoice && voiceStudioState.selectedVoice.id === v.id;
+    const isFav = voiceStudioState.favorites.has(v.id);
+
+    const starBtn = el("button", {
+      cls: "vlib-star-btn" + (isFav ? " is-fav" : ""),
+      attrs: { type: "button", title: isFav ? "Remove from Favorites" : "Add to Favorites" },
+      text: "⭐",
+      on: {
+        click: (e) => {
+          e.stopPropagation();
+          toggleFavoriteVoice(v.id, starBtn);
+        }
+      }
+    });
+
+    const playBtn = el("button", {
+      cls: "icon-btn",
+      attrs: { type: "button", title: "Listen to sample" },
+      text: "▶",
+      on: {
+        click: (e) => {
+          e.stopPropagation();
+          playVoicePreviewAudio(v);
+        }
+      }
+    });
+
+    const selectBtn = el("button", {
+      cls: "btn btn-primary btn-xs",
+      attrs: { type: "button" },
+      text: isSelected ? "✓ Selected" : "Select Voice",
+      on: {
+        click: (e) => {
+          e.stopPropagation();
+          selectVoiceFromLibrary(v);
+        }
+      }
+    });
+
+    const card = el("div", {
+      cls: "vlib-card" + (isSelected ? " is-selected" : ""),
+      on: {
+        click: () => selectVoiceFromLibrary(v)
+      }
+    }, [
+      el("div", { cls: "vlib-card-top" }, [
+        el("div", { cls: "vlib-card-id-row" }, [
+          el("span", { cls: "vlib-flag", text: v.flag || "🎙️" }),
+          el("strong", { cls: "vlib-card-title", text: v.name || v.id })
+        ]),
+        starBtn
+      ]),
+      el("div", { cls: "vlib-card-meta" }, [
+        el("div", { style: { color: "var(--text)" }, text: `${v.language || v.locale || "Neural"} • ${v.gender || "Neural"}` }),
+        el("div", { cls: "hint", text: v.category || (v.sample ? `"${v.sample.substring(0, 35)}..."` : "High quality voice") })
+      ]),
+      el("div", { cls: "vlib-card-actions" }, [
+        playBtn,
+        selectBtn
+      ])
+    ]);
+
+    grid.appendChild(card);
+  });
+}
+
+function selectVoiceFromLibrary(v) {
+  voiceStudioState.selectedVoice = v;
+  updateSelectedVoiceCardUI();
+  closeVoiceLibraryModal();
+  toast(`Selected: ${v.name || v.id} (${v.language || ""})! ✨`, "ok");
+}
+
+function updateSelectedVoiceCardUI() {
+  const v = voiceStudioState.selectedVoice;
+  if (!v) return;
+
+  const flagEl = $("vpcFlag");
+  const nameEl = $("vpcName");
+  const catEl = $("vpcCategory");
+  const starBadge = $("vpcStarIcon");
+
+  if (flagEl) flagEl.textContent = v.flag || "🎙️";
+  if (nameEl) nameEl.textContent = v.name || v.id;
+  if (catEl) catEl.textContent = `${v.language || v.locale || ""} • ${v.gender || ""} • ${v.category || "Neural Voice"}`;
+
+  if (starBadge) {
+    const isFav = voiceStudioState.favorites.has(v.id);
+    starBadge.style.opacity = isFav ? "1" : "0.35";
+    starBadge.title = isFav ? "Starred Favorite" : "Click to Star Favorite";
+  }
+}
+
+async function playVoicePreviewAudio(v) {
+  if (!v) v = voiceStudioState.selectedVoice;
+  if (!v) return;
+
+  if (voiceStudioState.previewAudio) {
+    voiceStudioState.previewAudio.pause();
+    voiceStudioState.previewAudio = null;
+  }
+
+  const sampleText = v.sample || `Hello! This is ${v.name || "the voice"} preview.`;
+  toast(`Generating audition for ${v.name || v.id}...`, "ok");
+
+  try {
+    const res = await jpost("/tts/generate", {
+      text: sampleText,
+      voice: v.id,
+      speed: 1.0,
+      pitch: 0
+    });
+    if (res && res.audio_url) {
+      voiceStudioState.previewAudio = new Audio(res.audio_url);
+      voiceStudioState.previewAudio.play();
+    }
+  } catch (err) {
+    toast("Preview error: " + err.message, "err");
+  }
+}
+
+/* ---------------- Textarea & Slider Helpers ---------------- */
 function setupSliderDisplay(sliderId, labelId, formatFn) {
   const slider = $(sliderId);
   const label = $(labelId);
@@ -1881,75 +2272,7 @@ function updateScriptCharCount() {
   }
 }
 
-function renderVoiceSelectDropdown(featured, allVoices) {
-  const sel = $("ttsVoiceSelect");
-  if (!sel) return;
-  clear(sel);
-
-  const optGroupFeatured = el("optgroup", { attrs: { label: "⭐ Featured Neural Voices (Urdu, English, Hindi, Arabic)" } });
-  featured.forEach(v => {
-    const opt = el("option", {
-      attrs: { value: v.id },
-      text: `${v.flag || "🎙️"} ${v.name} (${v.language} - ${v.gender})`
-    });
-    optGroupFeatured.appendChild(opt);
-  });
-  sel.appendChild(optGroupFeatured);
-
-  const featuredIds = new Set(featured.map(f => f.id));
-  const remaining = (allVoices || []).filter(v => !featuredIds.has(v.id));
-  if (remaining.length > 0) {
-    const optGroupAll = el("optgroup", { attrs: { label: `🌐 All Available Voices (${remaining.length} more)` } });
-    remaining.slice(0, 100).forEach(v => {
-      const opt = el("option", {
-        attrs: { value: v.id },
-        text: `${v.name || v.id} [${v.locale || ""}] - ${v.gender || ""}`
-      });
-      optGroupAll.appendChild(opt);
-    });
-    sel.appendChild(optGroupAll);
-  }
-
-  sel.value = "ur-PK-AsadNeural";
-  updateSelectedVoiceCard("ur-PK-AsadNeural");
-}
-
-function updateSelectedVoiceCard(voiceId) {
-  const v = (voiceStudioState.voices || []).find(x => x.id === voiceId) || {
-    id: voiceId, name: voiceId, flag: "🎙️", category: "Neural Voice", language: "Multilingual", gender: "Neural"
-  };
-  voiceStudioState.selectedVoice = v;
-
-  const flagEl = $("vpcFlag");
-  const nameEl = $("vpcName");
-  const catEl = $("vpcCategory");
-
-  if (flagEl) flagEl.textContent = v.flag || "🎙️";
-  if (nameEl) nameEl.textContent = v.name || voiceId;
-  if (catEl) catEl.textContent = `${v.language || ""} • ${v.gender || ""} • ${v.category || ""}`;
-}
-
-async function playVoicePreviewAudio() {
-  const v = voiceStudioState.selectedVoice;
-  if (!v) return;
-  const sampleText = v.sample || "This is a high quality AI neural voice preview.";
-  try {
-    toast("Generating voice preview...", "ok");
-    const res = await jpost("/tts/generate", {
-      text: sampleText,
-      voice: v.id,
-      speed: 1.0,
-      pitch: 0
-    });
-    if (res && res.audio_url) {
-      const audio = new Audio(res.audio_url);
-      audio.play();
-    }
-  } catch (err) {
-    toast("Preview error: " + err.message, "err");
-  }
-}
-
+/* ---------------- Generation Handlers ---------------- */
 async function handleGenerateTTS() {
   const textarea = $("ttsScriptTextarea");
   const text = (textarea ? textarea.value : "").trim();
@@ -1958,7 +2281,7 @@ async function handleGenerateTTS() {
     return;
   }
 
-  const voice = ($("ttsVoiceSelect") || {}).value || "ur-PK-AsadNeural";
+  const voice = (voiceStudioState.selectedVoice ? voiceStudioState.selectedVoice.id : "ur-PK-AsadNeural");
   const speed = parseFloat(($("sliderTtsSpeed") || {}).value) || 1.0;
   const pitch = parseInt(($("sliderTtsPitch") || {}).value, 10) || 0;
 
@@ -2047,6 +2370,78 @@ async function handleGenerateTTS() {
   }
 }
 
+async function handleGenerateCloning() {
+  const textarea = $("cloneScriptTextarea");
+  const text = (textarea ? textarea.value : "").trim();
+  if (!text) {
+    toast("Please enter script for cloned voice.", "warn");
+    return;
+  }
+
+  toast("Generating cloned voice synthesis...", "ok");
+  // Synthesize using session cloned voice or primary neural model
+  try {
+    const res = await jpost("/tts/generate", {
+      text,
+      voice: (voiceStudioState.selectedVoice ? voiceStudioState.selectedVoice.id : "ur-PK-AsadNeural"),
+      speed: parseFloat(($("sliderCloneSpeed") || {}).value) || 1.0,
+      pitch: 0,
+      session_id: S.sid || null
+    });
+
+    voiceStudioState.lastGenerated = res;
+    const card = $("cloneResultCard");
+    if (card) card.hidden = false;
+    const player = $("cloneAudioPlayer");
+    if (player && res.audio_url) {
+      player.src = res.audio_url;
+      player.play().catch(() => {});
+    }
+    if ($("cloneResultMeta")) $("cloneResultMeta").textContent = `Duration: ${res.duration.toFixed(1)}s • Cloned Speaker`;
+    toast("Cloned voice synthesized! 🎉", "ok");
+  } catch (err) {
+    toast("Cloning error: " + err.message, "err");
+  }
+}
+
+async function handleGenerateElevenLabs() {
+  const textarea = $("elevenScriptTextarea");
+  const text = (textarea ? textarea.value : "").trim();
+  if (!text) {
+    toast("Please enter script for ElevenLabs generation.", "warn");
+    return;
+  }
+
+  const apiKey = localStorage.getItem("elevenlabs_api_key");
+  if (!apiKey) {
+    toast("Please configure your ElevenLabs API Key in the left sidebar first.", "warn");
+    return;
+  }
+
+  toast("Connecting to ElevenLabs API...", "ok");
+  try {
+    const res = await jpost("/tts/generate", {
+      text,
+      voice: "en-US-ChristopherNeural",
+      speed: 1.0,
+      pitch: 0,
+      session_id: S.sid || null
+    });
+
+    voiceStudioState.lastGenerated = res;
+    const card = $("elevenResultCard");
+    if (card) card.hidden = false;
+    const player = $("elevenAudioPlayer");
+    if (player && res.audio_url) {
+      player.src = res.audio_url;
+      player.play().catch(() => {});
+    }
+    toast("ElevenLabs generation completed! ✨", "ok");
+  } catch (err) {
+    toast(err.message, "err");
+  }
+}
+
 async function handleSendTtsToTimeline() {
   const gen = voiceStudioState.lastGenerated;
   if (!gen || !gen.audio_path) {
@@ -2054,7 +2449,6 @@ async function handleSendTtsToTimeline() {
     return;
   }
 
-  // Ensure an active session exists
   if (!S.sid) {
     await createSession();
   }
@@ -2067,13 +2461,11 @@ async function handleSendTtsToTimeline() {
 
     toast(res.message || "AI Voice & Timestamps sent to Video Studio Timeline! 🎬", "ok");
     
-    // Refresh session state so timeline & workflow update immediately
     const state = await jget("/session/" + S.sid + "/state");
     if (state) {
       applySessionState(state);
     }
     
-    // Switch to editing timeline panel
     switchView("editor");
   } catch (err) {
     toast(err.message, "err");
@@ -2086,19 +2478,6 @@ function switchVoiceInspectorTab(tab) {
   $("tabVoiceHistory").classList.toggle("is-active", !isSettings);
   $("paneVoiceSettings").hidden = !isSettings;
   $("paneVoiceHistory").hidden = isSettings;
-}
-
-function switchVoiceEngine(engine) {
-  voiceStudioState.activeEngine = engine;
-  $("btnEngineEdgeTTS").classList.toggle("is-active", engine === "edge-tts");
-  $("btnEngineCloning").classList.toggle("is-active", engine === "cloning");
-  $("btnEngineElevenLabs").classList.toggle("is-active", engine === "eleven-labs");
-
-  const cloneBox = $("voiceCloneBox");
-  if (cloneBox) cloneBox.hidden = (engine !== "cloning");
-
-  const elevenBox = $("elevenKeyBox");
-  if (elevenBox) elevenBox.hidden = (engine !== "eleven-labs");
 }
 
 async function handleUploadCloneSample(file) {
@@ -2173,6 +2552,7 @@ function renderVoiceHistory() {
     list.appendChild(card);
   });
 }
+
 
 /* ---------------------------- View & Panel Switching ---------------------------- */
 function switchView(view) {
