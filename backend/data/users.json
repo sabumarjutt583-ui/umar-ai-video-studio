@@ -7,5 +7,14 @@
     "salt": "d13f87512ca94e36",
     "role": "owner",
     "created_at": 1788666054.8029895
+  },
+  {
+    "id": "owner_2",
+    "name": "Hafiz Muhammad Umar",
+    "email": "sabumarjutt583@gmail.com",
+    "password_hash": "bb442c4eaf10cfcfa62578cfc9de8937b3321f0c55829e706c4415cbfb0f6e7b",
+    "salt": "79cef18c97d442a8",
+    "role": "owner",
+    "created_at": 1788681658.7782614
   }
 ]
