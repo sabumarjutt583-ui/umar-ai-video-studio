@@ -680,13 +680,20 @@ async def get_tts_voices():
     }
 
 
+@app.get("/tts/progress/{job_id}")
+async def get_tts_progress(job_id: str):
+    """Returns live percentage (0-100%), stage status, and completed payload."""
+    return tts_engine.get_job_progress(job_id)
+
+
 @app.post("/tts/generate")
 async def generate_tts(request: Request,
                        text: str = Body(..., embed=True),
                        voice: str = Body("ur-PK-AsadNeural", embed=True),
                        speed: float = Body(1.0, embed=True),
                        pitch: int = Body(0, embed=True),
-                       session_id: Optional[str] = Body(None, embed=True)):
+                       session_id: Optional[str] = Body(None, embed=True),
+                       job_id: Optional[str] = Body(None, embed=True)):
     """Generates speech via Edge-TTS and returns audio URL + word-level timestamps."""
     clean = (text or "").strip()
     if not clean:
@@ -705,9 +712,12 @@ async def generate_tts(request: Request,
             voice=voice,
             speed=float(speed or 1.0),
             pitch=int(pitch or 0),
-            output_dir=out_dir
+            output_dir=out_dir,
+            job_id=job_id
         )
     except Exception as e:
+        if job_id:
+            tts_engine.set_job_progress(job_id, 0, "error", f"Generation Error: {str(e)}", is_done=True, error=str(e))
         raise HTTPException(status_code=500, detail=f"TTS Generation Error: {str(e)}")
 
     if target_session:
@@ -715,8 +725,9 @@ async def generate_tts(request: Request,
     else:
         audio_url = f"{base_url(request)}/files/tts_cache/{result['audio_filename']}"
 
-    return {
+    response_payload = {
         "status": "ok",
+        "job_id": result.get("job_id", job_id),
         "audio_url": audio_url,
         "audio_filename": result["audio_filename"],
         "audio_path": result["audio_path"],
@@ -726,8 +737,10 @@ async def generate_tts(request: Request,
         "srt_filename": result["srt_filename"],
         "srt_path": result["srt_path"],
         "clean_text": result["clean_text"],
+        "chunks_count": result.get("chunks_count", 1),
         "session_id": target_session
     }
+    return response_payload
 
 
 @app.post("/tts/send-to-project/{session_id}")

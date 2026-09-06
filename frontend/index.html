@@ -1062,6 +1062,20 @@
                 </button>
               </div>
             </div>
+
+            <!-- Real-Time Generation Progress Bar & Live Percentage -->
+            <div class="tts-progress-box" id="ttsProgressBox" hidden>
+              <div class="tts-progress-header">
+                <div class="tts-progress-info">
+                  <span class="tts-progress-spinner">⏳</span>
+                  <span class="tts-progress-status" id="ttsProgressStatus">Synthesizing audio chunks...</span>
+                </div>
+                <span class="tts-progress-pct-badge" id="ttsProgressPct">0%</span>
+              </div>
+              <div class="tts-progress-track">
+                <div class="tts-progress-fill" id="ttsProgressFill" style="width: 0%"></div>
+              </div>
+            </div>
           </div>
 
           <!-- Live Generation Result & 1-Click Timeline Bridge Card -->
@@ -1715,16 +1729,25 @@
       </div>
     </div>
 
-    <!-- Country / Language Quick Filter Chips -->
-    <div class="vlib-languages-bar" id="vlibLangChipsBar">
-      <button class="vlib-lang-chip is-active" data-lang="all" type="button">All Languages</button>
-      <button class="vlib-lang-chip" data-lang="ur" type="button">🇵🇰 Urdu (Pakistan)</button>
-      <button class="vlib-lang-chip" data-lang="en-us" type="button">🇺🇸 English (US)</button>
-      <button class="vlib-lang-chip" data-lang="en-gb" type="button">🇬🇧 English (UK)</button>
-      <button class="vlib-lang-chip" data-lang="hi" type="button">🇮🇳 Hindi / Indian</button>
-      <button class="vlib-lang-chip" data-lang="ar" type="button">🇸🇦 Arabic</button>
-      <button class="vlib-lang-chip" data-lang="ko" type="button">🇰🇷 Korean</button>
-      <button class="vlib-lang-chip" data-lang="tr" type="button">🇹🇷 Turkish</button>
+    <!-- Dedicated Separate Filters for Language & Country -->
+    <div class="vlib-dropdowns-row">
+      <div class="vlib-select-group">
+        <label for="vlibLangFilter" class="vlib-select-label">🌐 Language:</label>
+        <select id="vlibLangFilter" class="vlib-select-control">
+          <option value="all">All Languages</option>
+        </select>
+      </div>
+
+      <div class="vlib-select-group">
+        <label for="vlibCountryFilter" class="vlib-select-label">📍 Country / Region:</label>
+        <select id="vlibCountryFilter" class="vlib-select-control">
+          <option value="all">All Countries</option>
+        </select>
+      </div>
+
+      <button class="btn btn-ghost btn-sm vlib-reset-btn" id="btnVlibResetFilters" type="button" title="Reset all filters">
+        ↺ Reset Filters
+      </button>
     </div>
 
     <!-- Scrollable Voice Cards Grid -->

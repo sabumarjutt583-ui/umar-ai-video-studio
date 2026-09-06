@@ -1747,6 +1747,7 @@ let voiceStudioState = {
     search: "",
     gender: "all",
     lang: "all",
+    country: "all",
     favOnly: false
   }
 };
@@ -1790,6 +1791,49 @@ function toggleFavoriteVoice(voiceId, starBtn) {
   }
 }
 
+function setupVoiceFilterDropdowns() {
+  const langSelect = $("vlibLangFilter");
+  const countrySelect = $("vlibCountryFilter");
+  if (!langSelect || !countrySelect) return;
+
+  const all = (voiceStudioState.allVoices || voiceStudioState.voices || []);
+
+  // 1. Extract unique languages sorted alphabetically
+  const langMap = new Map();
+  all.forEach(v => {
+    const l = (v.language || "").trim();
+    if (l) langMap.set(l.toLowerCase(), l);
+  });
+  const sortedLangs = Array.from(langMap.values()).sort((a, b) => a.localeCompare(b));
+
+  clear(langSelect);
+  langSelect.appendChild(el("option", { attrs: { value: "all" }, text: `All Languages (${sortedLangs.length})` }));
+  sortedLangs.forEach(l => {
+    langSelect.appendChild(el("option", { attrs: { value: l.toLowerCase() }, text: l }));
+  });
+
+  // 2. Extract unique countries sorted alphabetically
+  const countryMap = new Map();
+  all.forEach(v => {
+    const c = (v.country || "").trim();
+    if (c) {
+      if (!countryMap.has(c.toLowerCase())) {
+        countryMap.set(c.toLowerCase(), { name: c, flag: v.flag || "📍" });
+      }
+    }
+  });
+  const sortedCountries = Array.from(countryMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+  clear(countrySelect);
+  countrySelect.appendChild(el("option", { attrs: { value: "all" }, text: `All Countries (${sortedCountries.length})` }));
+  sortedCountries.forEach(c => {
+    countrySelect.appendChild(el("option", { attrs: { value: c.name.toLowerCase() }, text: `${c.flag} ${c.name}` }));
+  });
+
+  langSelect.value = voiceStudioState.filter.lang || "all";
+  countrySelect.value = voiceStudioState.filter.country || "all";
+}
+
 async function initVoiceStudio() {
   if (voiceStudioState.initialized) return;
   voiceStudioState.initialized = true;
@@ -1808,6 +1852,7 @@ async function initVoiceStudio() {
         voiceStudioState.selectedVoice = voiceStudioState.voices[0];
       }
       updateSelectedVoiceCardUI();
+      setupVoiceFilterDropdowns();
     }
   } catch (err) {
     console.warn("Could not load voices from backend:", err);
@@ -1898,14 +1943,37 @@ async function initVoiceStudio() {
     renderVoiceLibraryCards();
   });
 
-  // Language filter chips
-  $$(".vlib-lang-chip").forEach(chip => {
-    chip.addEventListener("click", () => {
-      $$(".vlib-lang-chip").forEach(c => c.classList.remove("is-active"));
-      chip.classList.add("is-active");
-      voiceStudioState.filter.lang = chip.dataset.lang || "all";
-      renderVoiceLibraryCards();
+  // Language & Country Dedicated Dropdown Listeners
+  on("vlibLangFilter", "change", (e) => {
+    voiceStudioState.filter.lang = (e.target.value || "all").toLowerCase();
+    renderVoiceLibraryCards();
+  });
+
+  on("vlibCountryFilter", "change", (e) => {
+    voiceStudioState.filter.country = (e.target.value || "all").toLowerCase();
+    renderVoiceLibraryCards();
+  });
+
+  // Reset Filters Button
+  on("btnVlibResetFilters", "click", () => {
+    voiceStudioState.filter = {
+      search: "",
+      gender: "all",
+      lang: "all",
+      country: "all",
+      favOnly: false
+    };
+    if (searchInput) {
+      searchInput.value = "";
+      if ($("btnVlibClearSearch")) $("btnVlibClearSearch").style.display = "none";
+    }
+    $$(".vlib-pill-btn").forEach(b => {
+      b.classList.toggle("is-active", (b.dataset.gender || "all") === "all");
     });
+    if ($("vlibBtnFavs")) $("vlibBtnFavs").classList.remove("is-active");
+    if ($("vlibLangFilter")) $("vlibLangFilter").value = "all";
+    if ($("vlibCountryFilter")) $("vlibCountryFilter").value = "all";
+    renderVoiceLibraryCards();
   });
 
   // 9. Audio Preview on active card
@@ -2043,10 +2111,11 @@ function renderVoiceLibraryCards() {
       const q = filter.search;
       const matchName = (v.name || "").toLowerCase().includes(q);
       const matchLang = (v.language || "").toLowerCase().includes(q);
+      const matchCountry = (v.country || "").toLowerCase().includes(q);
       const matchLocale = (v.locale || "").toLowerCase().includes(q);
       const matchCat = (v.category || "").toLowerCase().includes(q);
       const matchId = (v.id || "").toLowerCase().includes(q);
-      if (!matchName && !matchLang && !matchLocale && !matchCat && !matchId) return false;
+      if (!matchName && !matchLang && !matchCountry && !matchLocale && !matchCat && !matchId) return false;
     }
 
     // 2. Gender
@@ -2060,16 +2129,17 @@ function renderVoiceLibraryCards() {
       if (!voiceStudioState.favorites.has(v.id)) return false;
     }
 
-    // 4. Language / Country
+    // 4. Language Filter
     if (filter.lang !== "all") {
-      const loc = (v.locale || v.id || "").toLowerCase();
-      if (filter.lang === "ur" && !loc.startsWith("ur")) return false;
-      if (filter.lang === "en-us" && !loc.startsWith("en-us")) return false;
-      if (filter.lang === "en-gb" && !loc.startsWith("en-gb")) return false;
-      if (filter.lang === "hi" && !loc.startsWith("hi") && !loc.includes("in")) return false;
-      if (filter.lang === "ar" && !loc.startsWith("ar")) return false;
-      if (filter.lang === "ko" && !loc.startsWith("ko")) return false;
-      if (filter.lang === "tr" && !loc.startsWith("tr")) return false;
+      const vLang = (v.language || "").toLowerCase();
+      if (vLang !== filter.lang && !vLang.includes(filter.lang)) return false;
+    }
+
+    // 5. Country Filter
+    if (filter.country !== "all") {
+      const vCountry = (v.country || "").toLowerCase();
+      const vCode = (v.country_code || "").toLowerCase();
+      if (vCountry !== filter.country && vCode !== filter.country) return false;
     }
 
     return true;
@@ -2137,15 +2207,19 @@ function renderVoiceLibraryCards() {
       }
     }, [
       el("div", { cls: "vlib-card-top" }, [
-        el("div", { cls: "vlib-card-id-row" }, [
-          el("span", { cls: "vlib-flag", text: v.flag || "🎙️" }),
-          el("strong", { cls: "vlib-card-title", text: v.name || v.id })
+        el("span", { cls: "vlib-country-badge" }, [
+          el("span", { cls: "flag", text: v.flag || "🎙️" }),
+          el("span", { text: v.country || "Global" })
         ]),
         starBtn
       ]),
-      el("div", { cls: "vlib-card-meta" }, [
-        el("div", { style: { color: "var(--text)" }, text: `${v.language || v.locale || "Neural"} • ${v.gender || "Neural"}` }),
-        el("div", { cls: "hint", text: v.category || (v.sample ? `"${v.sample.substring(0, 35)}..."` : "High quality voice") })
+      el("div", { cls: "vlib-card-main" }, [
+        el("div", { cls: "vlib-voice-name", text: v.name || v.id }),
+        el("div", { cls: "vlib-badges-row" }, [
+          el("span", { cls: "vlib-tag-pill vlib-tag-lang", text: `🌐 ${v.language || "Neural"}` }),
+          el("span", { cls: "vlib-tag-pill vlib-tag-gender", text: v.gender === "Female" ? "👩 Female" : "👨 Male" })
+        ]),
+        el("div", { cls: "vlib-card-meta", text: v.category || (v.sample ? `"${v.sample.substring(0, 45)}..."` : "Ultra-realistic neural voice") })
       ]),
       el("div", { cls: "vlib-card-actions" }, [
         playBtn,
@@ -2175,7 +2249,7 @@ function updateSelectedVoiceCardUI() {
 
   if (flagEl) flagEl.textContent = v.flag || "🎙️";
   if (nameEl) nameEl.textContent = v.name || v.id;
-  if (catEl) catEl.textContent = `${v.language || v.locale || ""} • ${v.gender || ""} • ${v.category || "Neural Voice"}`;
+  if (catEl) catEl.textContent = `${v.country || "Global"} • ${v.language || v.locale || ""} • ${v.gender || "Neural"}`;
 
   if (starBadge) {
     const isFav = voiceStudioState.favorites.has(v.id);
@@ -2289,9 +2363,35 @@ async function handleGenerateTTS() {
   const btnText = $("ttsBtnText");
   const generateBtn = $("btnTtsGenerate");
 
+  const progressBox = $("ttsProgressBox");
+  const progressPct = $("ttsProgressPct");
+  const progressFill = $("ttsProgressFill");
+  const progressStatus = $("ttsProgressStatus");
+
+  const jobId = "tts_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6);
+
   if (generateBtn) generateBtn.disabled = true;
   if (btnIcon) btnIcon.textContent = "⏳";
-  if (btnText) btnText.textContent = "Synthesizing...";
+  if (btnText) btnText.textContent = "Synthesizing (10%)...";
+
+  if (progressBox) progressBox.hidden = false;
+  if (progressPct) progressPct.textContent = "10%";
+  if (progressFill) progressFill.style.width = "10%";
+  if (progressStatus) progressStatus.textContent = "Analyzing script and connecting to neural engine...";
+
+  // Poll progress every 200ms
+  let pollTimer = setInterval(async () => {
+    try {
+      const prog = await jget(`/tts/progress/${jobId}`);
+      if (prog && typeof prog.percent === "number") {
+        const pct = prog.percent;
+        if (progressPct) progressPct.textContent = pct + "%";
+        if (progressFill) progressFill.style.width = pct + "%";
+        if (progressStatus && prog.message) progressStatus.textContent = prog.message;
+        if (btnText) btnText.textContent = `Synthesizing (${pct}%)...`;
+      }
+    } catch (e) {}
+  }, 200);
 
   try {
     const res = await jpost("/tts/generate", {
@@ -2299,8 +2399,14 @@ async function handleGenerateTTS() {
       voice,
       speed,
       pitch,
-      session_id: S.sid || null
+      session_id: S.sid || null,
+      job_id: jobId
     });
+
+    clearInterval(pollTimer);
+    if (progressPct) progressPct.textContent = "100%";
+    if (progressFill) progressFill.style.width = "100%";
+    if (progressStatus) progressStatus.textContent = "Voice synthesized successfully! (100%)";
 
     toast("Voice synthesized successfully! 🎉", "ok");
     voiceStudioState.lastGenerated = res;
@@ -2362,11 +2468,16 @@ async function handleGenerateTTS() {
     });
 
   } catch (err) {
+    clearInterval(pollTimer);
     toast(err.message || "TTS Generation Failed", "err");
   } finally {
+    clearInterval(pollTimer);
     if (generateBtn) generateBtn.disabled = false;
     if (btnIcon) btnIcon.textContent = "✨";
     if (btnText) btnText.textContent = "Generate Speech";
+    setTimeout(() => {
+      if (progressBox) progressBox.hidden = true;
+    }, 2500);
   }
 }
 

@@ -1251,19 +1251,34 @@ table.grid td.rownum { color: var(--text-dim); font-variant-numeric: tabular-num
   background: rgba(245, 158, 11, 0.25); border-color: rgba(245, 158, 11, 0.7);
 }
 
-/* Language Chips Bar */
-.vlib-languages-bar {
-  display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.6rem 0 0.4rem 0;
-  scrollbar-width: thin;
+/* Dual Dropdown Filters for Language & Country */
+.vlib-dropdowns-row {
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+  padding: 0.65rem 0 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-.vlib-lang-chip {
-  background: rgba(255,255,255,0.05); border: 1px solid var(--line);
-  border-radius: 999px; padding: 0.3rem 0.75rem; font-size: 0.75rem;
-  color: var(--text); white-space: nowrap; cursor: pointer; transition: 0.15s;
+.vlib-select-group {
+  display: flex; align-items: center; gap: 0.4rem; flex: 1; min-width: 180px;
 }
-.vlib-lang-chip:hover { background: rgba(255,255,255,0.12); color: #fff; }
-.vlib-lang-chip.is-active {
-  background: #8b5cf6; border-color: #8b5cf6; color: #fff; font-weight: 600;
+.vlib-select-label {
+  font-size: 0.75rem; color: var(--text-dim); font-weight: 600; white-space: nowrap;
+}
+.vlib-select-control {
+  flex: 1; background: rgba(18, 24, 38, 0.85); border: 1px solid var(--line);
+  color: #fff; font-size: 0.8rem; border-radius: 6px; padding: 0.38rem 0.6rem;
+  outline: none; transition: border-color 0.15s; cursor: pointer;
+}
+.vlib-select-control:focus, .vlib-select-control:hover {
+  border-color: rgba(139, 92, 246, 0.7);
+}
+.vlib-select-control option {
+  background: #111827; color: #fff;
+}
+.vlib-reset-btn {
+  font-size: 0.75rem; padding: 0.35rem 0.65rem; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px; color: var(--text-dim); cursor: pointer; transition: 0.15s;
+}
+.vlib-reset-btn:hover {
+  color: #fff; background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.25);
 }
 
 /* Voice Cards Grid */
@@ -1271,27 +1286,32 @@ table.grid td.rownum { color: var(--text-dim); font-variant-numeric: tabular-num
   flex: 1; overflow-y: auto; max-height: 480px; margin: 0.75rem 0; padding-right: 0.3rem;
 }
 .vlib-cards-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 0.75rem;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.85rem;
 }
 .vlib-card {
-  background: rgba(0, 0, 0, 0.28); border: 1px solid var(--line);
-  border-radius: 10px; padding: 0.75rem; display: flex; flex-direction: column;
-  justify-content: space-between; gap: 0.6rem; transition: all 0.15s;
+  background: rgba(15, 23, 42, 0.55); border: 1px solid var(--line);
+  border-radius: 10px; padding: 0.85rem; display: flex; flex-direction: column;
+  justify-content: space-between; gap: 0.65rem; transition: all 0.15s;
 }
 .vlib-card:hover {
   border-color: rgba(139,92,246,0.6); background: rgba(139,92,246,0.08);
-  transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.35);
 }
 .vlib-card.is-selected {
   border-color: #10b981; background: rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
 }
 .vlib-card-top {
   display: flex; align-items: center; justify-content: space-between;
 }
-.vlib-card-id-row { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
-.vlib-flag { font-size: 1.4rem; }
-.vlib-card-title { font-size: 0.88rem; font-weight: 700; color: #fff; }
+.vlib-country-badge {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px; padding: 0.2rem 0.6rem; font-size: 0.75rem; font-weight: 600;
+  color: #e2e8f0;
+}
+.vlib-country-badge .flag { font-size: 1.05rem; }
 .vlib-star-btn {
   background: transparent; border: none; font-size: 1.15rem; cursor: pointer;
   opacity: 0.4; transition: 0.15s; padding: 0.2rem;
@@ -1300,11 +1320,70 @@ table.grid td.rownum { color: var(--text-dim); font-variant-numeric: tabular-num
 .vlib-star-btn.is-fav {
   opacity: 1; filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.6));
 }
-.vlib-card-meta { font-size: 0.72rem; color: var(--text-dim); line-height: 1.4; }
+
+.vlib-card-main {
+  display: flex; flex-direction: column; gap: 0.35rem;
+}
+.vlib-voice-name {
+  font-size: 0.95rem; font-weight: 700; color: #fff;
+}
+.vlib-badges-row {
+  display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+}
+.vlib-tag-pill {
+  font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 4px;
+}
+.vlib-tag-lang {
+  background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.35); color: #c4b5fd;
+}
+.vlib-tag-gender {
+  background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd;
+}
+.vlib-card-meta {
+  font-size: 0.73rem; color: var(--text-dim); line-height: 1.35;
+  overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+
 .vlib-card-actions {
   display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;
-  margin-top: 0.2rem;
+  margin-top: 0.2rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.4rem;
 }
+
+/* ---------------- Real-time Synthesis Progress Bar & Live Percentage ---------------- */
+.tts-progress-box {
+  margin-top: 0.85rem; padding: 0.85rem 1rem;
+  background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 8px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.2s ease-out;
+}
+.tts-progress-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.tts-progress-info {
+  display: flex; align-items: center; gap: 0.45rem;
+  font-size: 0.82rem; font-weight: 500; color: #e2e8f0;
+}
+.tts-progress-spinner {
+  font-size: 0.95rem; animation: pulse 1.2s infinite;
+}
+.tts-progress-pct-badge {
+  font-size: 0.88rem; font-weight: 700; color: #10b981;
+  background: rgba(16, 185, 129, 0.12); padding: 0.2rem 0.55rem;
+  border-radius: 999px; border: 1px solid rgba(16, 185, 129, 0.3);
+  min-width: 44px; text-align: center;
+}
+.tts-progress-track {
+  width: 100%; height: 8px; background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px; overflow: hidden; position: relative;
+}
+.tts-progress-fill {
+  height: 100%; width: 0%; border-radius: 999px;
+  background: linear-gradient(90deg, #8b5cf6, #3b82f6, #10b981);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  transition: width 0.3s ease-out;
+}
+
 
 
 

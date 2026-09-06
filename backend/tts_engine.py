@@ -31,7 +31,9 @@ FEATURED_VOICES = [
     {
         "id": "ur-PK-AsadNeural",
         "name": "Asad Neural",
-        "language": "Urdu (Pakistan)",
+        "language": "Urdu",
+        "country": "Pakistan",
+        "country_code": "PK",
         "locale": "ur-PK",
         "flag": "🇵🇰",
         "gender": "Male",
@@ -41,7 +43,9 @@ FEATURED_VOICES = [
     {
         "id": "ur-PK-UzmaNeural",
         "name": "Uzma Neural",
-        "language": "Urdu (Pakistan)",
+        "language": "Urdu",
+        "country": "Pakistan",
+        "country_code": "PK",
         "locale": "ur-PK",
         "flag": "🇵🇰",
         "gender": "Female",
@@ -51,7 +55,9 @@ FEATURED_VOICES = [
     {
         "id": "en-US-ChristopherNeural",
         "name": "Christopher Neural",
-        "language": "English (United States)",
+        "language": "English",
+        "country": "United States",
+        "country_code": "US",
         "locale": "en-US",
         "flag": "🇺🇸",
         "gender": "Male",
@@ -61,7 +67,9 @@ FEATURED_VOICES = [
     {
         "id": "en-US-JennyNeural",
         "name": "Jenny Neural",
-        "language": "English (United States)",
+        "language": "English",
+        "country": "United States",
+        "country_code": "US",
         "locale": "en-US",
         "flag": "🇺🇸",
         "gender": "Female",
@@ -71,7 +79,9 @@ FEATURED_VOICES = [
     {
         "id": "en-US-GuyNeural",
         "name": "Guy Neural",
-        "language": "English (United States)",
+        "language": "English",
+        "country": "United States",
+        "country_code": "US",
         "locale": "en-US",
         "flag": "🇺🇸",
         "gender": "Male",
@@ -81,7 +91,9 @@ FEATURED_VOICES = [
     {
         "id": "en-US-AriaNeural",
         "name": "Aria Neural",
-        "language": "English (United States)",
+        "language": "English",
+        "country": "United States",
+        "country_code": "US",
         "locale": "en-US",
         "flag": "🇺🇸",
         "gender": "Female",
@@ -91,7 +103,9 @@ FEATURED_VOICES = [
     {
         "id": "en-GB-RyanNeural",
         "name": "Ryan Neural",
-        "language": "English (United Kingdom)",
+        "language": "English",
+        "country": "United Kingdom",
+        "country_code": "GB",
         "locale": "en-GB",
         "flag": "🇬🇧",
         "gender": "Male",
@@ -101,7 +115,9 @@ FEATURED_VOICES = [
     {
         "id": "en-GB-SoniaNeural",
         "name": "Sonia Neural",
-        "language": "English (United Kingdom)",
+        "language": "English",
+        "country": "United Kingdom",
+        "country_code": "GB",
         "locale": "en-GB",
         "flag": "🇬🇧",
         "gender": "Female",
@@ -111,7 +127,9 @@ FEATURED_VOICES = [
     {
         "id": "hi-IN-MadhurNeural",
         "name": "Madhur Neural",
-        "language": "Hindi (India)",
+        "language": "Hindi",
+        "country": "India",
+        "country_code": "IN",
         "locale": "hi-IN",
         "flag": "🇮🇳",
         "gender": "Male",
@@ -121,7 +139,9 @@ FEATURED_VOICES = [
     {
         "id": "hi-IN-SwaraNeural",
         "name": "Swara Neural",
-        "language": "Hindi (India)",
+        "language": "Hindi",
+        "country": "India",
+        "country_code": "IN",
         "locale": "hi-IN",
         "flag": "🇮🇳",
         "gender": "Female",
@@ -131,17 +151,21 @@ FEATURED_VOICES = [
     {
         "id": "ar-SA-HamedNeural",
         "name": "Hamed Neural",
-        "language": "Arabic (Saudi Arabia)",
+        "language": "Arabic",
+        "country": "Saudi Arabia",
+        "country_code": "SA",
         "locale": "ar-SA",
         "flag": "🇸🇦",
         "gender": "Male",
         "category": "Formal / Eloquent",
-        "sample": "مرحباً بكم في استوديو إنتاج الفيديو الذكي."
+        "sample": "مرحباً بكم في استوديو إنتاج الفيديو الذکی."
     },
     {
         "id": "ko-KR-HyunsuNeural",
         "name": "Hyunsu Multilingual",
-        "language": "Korean (South Korea)",
+        "language": "Korean",
+        "country": "South Korea",
+        "country_code": "KR",
         "locale": "ko-KR",
         "flag": "🇰🇷",
         "gender": "Male",
@@ -151,7 +175,9 @@ FEATURED_VOICES = [
     {
         "id": "tr-TR-AhmetNeural",
         "name": "Ahmet Neural",
-        "language": "Turkish (Turkey)",
+        "language": "Turkish",
+        "country": "Turkey",
+        "country_code": "TR",
         "locale": "tr-TR",
         "flag": "🇹🇷",
         "gender": "Male",
@@ -265,8 +291,140 @@ def format_pitch_str(pitch_hz: int) -> str:
     return f"{pitch_hz}Hz"
 
 
+# ----------------------------------------------------------------------------
+# In-Memory Progress Tracking for Live Percentages (0% - 100%)
+# ----------------------------------------------------------------------------
+TTS_JOBS: Dict[str, Dict[str, Any]] = {}
+
+def set_job_progress(
+    job_id: Optional[str],
+    percent: int,
+    stage: str,
+    message: str,
+    is_done: bool = False,
+    result: Optional[Dict[str, Any]] = None,
+    error: Optional[str] = None
+):
+    if not job_id:
+        return
+    TTS_JOBS[job_id] = {
+        "job_id": job_id,
+        "percent": max(0, min(100, int(percent))),
+        "stage": stage,
+        "message": message,
+        "is_done": is_done,
+        "result": result,
+        "error": error
+    }
+
+def get_job_progress(job_id: str) -> Dict[str, Any]:
+    return TTS_JOBS.get(job_id, {
+        "job_id": job_id,
+        "percent": 0,
+        "stage": "not_found",
+        "message": "Initializing synthesizer...",
+        "is_done": False,
+        "result": None,
+        "error": None
+    })
+
+
+def get_country_flag(country_code: str) -> str:
+    """Converts 2-letter ISO code to Unicode flag emoji (e.g. PK -> 🇵🇰, US -> 🇺🇸)."""
+    if not country_code or len(country_code) != 2:
+        return "🎙️"
+    try:
+        return "".join(chr(127397 + ord(c)) for c in country_code.upper())
+    except Exception:
+        return "🎙️"
+
+
+def format_srt_time(seconds: float) -> str:
+    """Formats float seconds into SRT timestamp '00:00:01,234'."""
+    hrs = int(seconds // 3600)
+    mins = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    millis = int(round((seconds - int(seconds)) * 1000))
+    return f"{hrs:02d}:{mins:02d}:{secs:02d},{millis:03d}"
+
+
+def words_to_srt(words: List[Dict[str, Any]], words_per_sub: int = 5) -> str:
+    """Generates clean, readable SRT subtitle format from aligned word timestamps."""
+    if not words:
+        return ""
+    lines = []
+    sub_index = 1
+    curr_group = []
+    for w in words:
+        curr_group.append(w)
+        txt = (w.get("word") or "").strip()
+        # End subtitle block on sentence punctuation or chunk size
+        if len(curr_group) >= words_per_sub or txt.endswith((".", "!", "?", "۔", "؟", "…")):
+            start_sec = curr_group[0]["start"]
+            end_sec = curr_group[-1]["end"]
+            sentence_str = " ".join(item["word"] for item in curr_group)
+            lines.append(f"{sub_index}")
+            lines.append(f"{format_srt_time(start_sec)} --> {format_srt_time(end_sec)}")
+            lines.append(sentence_str)
+            lines.append("")
+            sub_index += 1
+            curr_group = []
+    if curr_group:
+        start_sec = curr_group[0]["start"]
+        end_sec = curr_group[-1]["end"]
+        sentence_str = " ".join(item["word"] for item in curr_group)
+        lines.append(f"{sub_index}")
+        lines.append(f"{format_srt_time(start_sec)} --> {format_srt_time(end_sec)}")
+        lines.append(sentence_str)
+        lines.append("")
+    return "\n".join(lines)
+
+
+def split_script_into_chunks(text: str, target_chunk_size: int = 750) -> List[str]:
+    """Splits a long script cleanly on sentence/paragraph boundaries without cutting words."""
+    if len(text) <= target_chunk_size:
+        return [text]
+
+    paragraphs = [p.strip() for p in re.split(r'(\n+)', text) if p.strip()]
+    chunks = []
+    current_chunk = []
+    current_len = 0
+
+    for p in paragraphs:
+        if len(p) > target_chunk_size:
+            sentences = re.split(r'([.?!۔؟…\n]+\s*)', p)
+            sent_parts = []
+            for i in range(0, len(sentences), 2):
+                s = sentences[i]
+                delim = sentences[i+1] if i+1 < len(sentences) else ''
+                combined = (s + delim).strip()
+                if combined:
+                    sent_parts.append(combined)
+            for s in sent_parts:
+                if current_len + len(s) > target_chunk_size and current_chunk:
+                    chunks.append(" ".join(current_chunk))
+                    current_chunk = [s]
+                    current_len = len(s)
+                else:
+                    current_chunk.append(s)
+                    current_len += len(s)
+        else:
+            if current_len + len(p) > target_chunk_size and current_chunk:
+                chunks.append(" ".join(current_chunk))
+                current_chunk = [p]
+                current_len = len(p)
+            else:
+                current_chunk.append(p)
+                current_len += len(p)
+
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))
+
+    return chunks if chunks else [text]
+
+
 async def list_all_available_voices() -> List[Dict[str, Any]]:
-    """Returns all voices from edge-tts if available, else featured list."""
+    """Returns all voices from edge-tts enriched with name, country, language, flag, and gender."""
     if not EDGE_TTS_AVAILABLE or edge_tts is None:
         return FEATURED_VOICES
 
@@ -278,15 +436,34 @@ async def list_all_available_voices() -> List[Dict[str, Any]]:
             locale = v.get("Locale", "")
             gender = v.get("Gender", "Unknown")
             friendly = v.get("FriendlyName", short_name)
-            
-            # Extract clean display name
+            locale_name = v.get("LocaleName", "")
+
+            parts = locale.split("-")
+            lang_code = parts[0] if len(parts) > 0 else ""
+            country_code = parts[1] if len(parts) > 1 else ""
+
+            # Parse language and country name from LocaleName: e.g. "Urdu (Pakistan)"
+            m = re.match(r"^(.*?)\s*\((.*?)\)$", locale_name)
+            if m:
+                lang_name = m.group(1).strip()
+                country_name = m.group(2).strip()
+            else:
+                lang_name = locale_name or lang_code
+                country_name = country_code or "Global"
+
+            # Clean display name: e.g. "Asad Neural"
             name_match = re.search(r'-([A-Za-z0-9]+)Neural', short_name)
-            clean_name = name_match.group(1) if name_match else short_name
+            clean_name = (name_match.group(1) + " Neural") if name_match else short_name
+            flag = get_country_flag(country_code)
 
             res.append({
                 "id": short_name,
                 "name": clean_name,
                 "locale": locale,
+                "language": lang_name,
+                "country": country_name,
+                "country_code": country_code,
+                "flag": flag,
                 "gender": gender,
                 "friendlyName": friendly
             })
@@ -296,65 +473,31 @@ async def list_all_available_voices() -> List[Dict[str, Any]]:
         return FEATURED_VOICES
 
 
-async def synthesize_speech(
-    text: str,
-    voice: str = "ur-PK-AsadNeural",
-    speed: float = 1.0,
-    pitch: int = 0,
-    output_dir: str = "",
-    file_prefix: str = "tts_voice"
+async def _synthesize_single_chunk(
+    chunk_index: int,
+    chunk_text: str,
+    voice: str,
+    rate_str: str,
+    pitch_str: str,
+    part_audio_path: str
 ) -> Dict[str, Any]:
-    """
-    Synthesizes speech using Edge-TTS with word-level timestamps.
-    Returns:
-    {
-        "audio_path": "/path/to/file.mp3",
-        "audio_filename": "tts_voice_xyz.mp3",
-        "srt_path": "/path/to/file.srt",
-        "words": [{"word": "hello", "start": 0.0, "end": 0.45}, ...],
-        "duration": 5.2,
-        "clean_text": "...",
-        "engine": "edge-tts"
-    }
-    """
-    if not EDGE_TTS_AVAILABLE or edge_tts is None:
-        raise RuntimeError("edge-tts package is not installed. Run: pip install edge-tts")
-
-    os.makedirs(output_dir, exist_ok=True)
-    job_id = uuid.uuid4().hex[:8]
-    audio_filename = f"{file_prefix}_{job_id}.mp3"
-    srt_filename = f"{file_prefix}_{job_id}.srt"
-    json_filename = f"{file_prefix}_{job_id}_words.json"
-
-    audio_path = os.path.join(output_dir, audio_filename)
-    srt_path = os.path.join(output_dir, srt_filename)
-    json_path = os.path.join(output_dir, json_filename)
-
-    clean_text = clean_script_for_edge_tts(text)
-    if not clean_text:
-        clean_text = "..."
-
-    rate_str = format_rate_str(speed)
-    pitch_str = format_pitch_str(pitch)
-
+    """Synthesizes a single chunk and collects its words & max duration."""
     communicate = edge_tts.Communicate(
-        text=clean_text,
+        text=chunk_text,
         voice=voice,
         rate=rate_str,
         pitch=pitch_str
     )
 
     words = []
-    submaker = edge_tts.SubMaker()
-    max_end_time = 0.0
+    max_chunk_end = 0.0
 
-    with open(audio_path, "wb") as f_audio:
+    with open(part_audio_path, "wb") as f_part:
         async for chunk in communicate.stream():
             chunk_type = chunk.get("type", "")
             if chunk_type == "audio":
-                f_audio.write(chunk.get("data", b""))
+                f_part.write(chunk.get("data", b""))
             elif chunk_type in ("WordBoundary", "SentenceBoundary"):
-                submaker.feed(chunk)
                 offset_ticks = chunk.get("offset", 0)
                 duration_ticks = chunk.get("duration", 0)
                 text_seg = chunk.get("text", "")
@@ -362,7 +505,7 @@ async def synthesize_speech(
                 start_sec = round(offset_ticks / 10_000_000.0, 3)
                 duration_sec = round(duration_ticks / 10_000_000.0, 3)
                 end_sec = round(start_sec + duration_sec, 3)
-                max_end_time = max(max_end_time, end_sec)
+                max_chunk_end = max(max_chunk_end, end_sec)
 
                 if chunk_type == "WordBoundary":
                     words.append({
@@ -372,7 +515,6 @@ async def synthesize_speech(
                         "duration": duration_sec
                     })
                 else:
-                    # SentenceBoundary: interpolate word timing within sentence span
                     sub_words = [w for w in text_seg.split() if w]
                     if sub_words:
                         total_chars = sum(len(w) for w in sub_words) or 1
@@ -387,8 +529,134 @@ async def synthesize_speech(
                             })
                             cursor_t = round(cursor_t + w_dur, 3)
 
-    # Generate SRT subtitles file
-    srt_content = submaker.get_srt()
+    actual_duration = max_chunk_end
+    try:
+        from audio_tools import probe_duration
+        probed = probe_duration(part_audio_path)
+        if probed > 0:
+            actual_duration = round(probed, 3)
+    except Exception:
+        pass
+
+    return {
+        "index": chunk_index,
+        "audio_path": part_audio_path,
+        "duration": actual_duration,
+        "words": words,
+        "text": chunk_text
+    }
+
+
+async def synthesize_speech(
+    text: str,
+    voice: str = "ur-PK-AsadNeural",
+    speed: float = 1.0,
+    pitch: int = 0,
+    output_dir: str = "",
+    file_prefix: str = "tts_voice",
+    job_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Synthesizes speech using accelerated Edge-TTS with parallel chunks & real-time progress.
+    """
+    if not EDGE_TTS_AVAILABLE or edge_tts is None:
+        raise RuntimeError("edge-tts package is not installed. Run: pip install edge-tts")
+
+    job_id = job_id or uuid.uuid4().hex[:8]
+    os.makedirs(output_dir, exist_ok=True)
+    audio_filename = f"{file_prefix}_{job_id}.mp3"
+    srt_filename = f"{file_prefix}_{job_id}.srt"
+    json_filename = f"{file_prefix}_{job_id}_words.json"
+
+    audio_path = os.path.join(output_dir, audio_filename)
+    srt_path = os.path.join(output_dir, srt_filename)
+    json_path = os.path.join(output_dir, json_filename)
+
+    set_job_progress(job_id, 10, "preparing", "Parsing emotions and optimizing script...")
+
+    clean_text = clean_script_for_edge_tts(text)
+    if not clean_text:
+        clean_text = "..."
+
+    rate_str = format_rate_str(speed)
+    pitch_str = format_pitch_str(pitch)
+
+    # Split into chunks for acceleration
+    chunks = split_script_into_chunks(clean_text, target_chunk_size=750)
+    total_chunks = len(chunks)
+
+    set_job_progress(job_id, 20, "synthesizing", f"Generating neural speech ({total_chunks} {'stream' if total_chunks == 1 else 'parallel chunks'})...")
+
+    # If only 1 chunk, synthesize directly to target
+    if total_chunks == 1:
+        res_chunk = await _synthesize_single_chunk(0, clean_text, voice, rate_str, pitch_str, audio_path)
+        words = res_chunk["words"]
+        total_duration = res_chunk["duration"]
+        set_job_progress(job_id, 85, "finalizing", "Aligning word timestamps and creating subtitles...")
+    else:
+        # Multi-chunk parallel synthesis
+        sem = asyncio.Semaphore(4)
+        completed_count = 0
+        part_results = [None] * total_chunks
+
+        async def worker(idx: int, c_text: str):
+            nonlocal completed_count
+            part_path = os.path.join(output_dir, f"temp_{job_id}_part_{idx:03d}.mp3")
+            async with sem:
+                res = await _synthesize_single_chunk(idx, c_text, voice, rate_str, pitch_str, part_path)
+            part_results[idx] = res
+            completed_count += 1
+            pct = 20 + int((completed_count / total_chunks) * 65)
+            set_job_progress(job_id, pct, "synthesizing", f"Synthesized chunk {completed_count} of {total_chunks} ({pct}%)...")
+
+        await asyncio.gather(*[worker(i, c) for i, c in enumerate(chunks)])
+
+        set_job_progress(job_id, 88, "merging", "Merging audio streams seamlessly...")
+
+        # Concat chunks using fast ffmpeg concat copy (lossless, instant)
+        concat_list_path = os.path.join(output_dir, f"concat_{job_id}.txt")
+        with open(concat_list_path, "w", encoding="utf-8") as f_list:
+            for part in part_results:
+                if part and os.path.exists(part["audio_path"]):
+                    escaped = os.path.abspath(part["audio_path"]).replace("\\", "/").replace("'", "'\\''")
+                    f_list.write(f"file '{escaped}'\n")
+
+        import subprocess
+        cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list_path, "-c", "copy", audio_path]
+        proc = subprocess.run(cmd, capture_output=True)
+        if proc.returncode != 0:
+            # Fallback: re-encode if copy failed
+            subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list_path, "-c:a", "libmp3lame", "-b:a", "192k", audio_path], capture_output=True)
+
+        # Merge word timestamps with cumulative offset
+        words = []
+        cumulative_time = 0.0
+        for part in part_results:
+            if not part:
+                continue
+            for w in part["words"]:
+                words.append({
+                    "word": w["word"],
+                    "start": round(w["start"] + cumulative_time, 3),
+                    "end": round(w["end"] + cumulative_time, 3),
+                    "duration": w["duration"]
+                })
+            cumulative_time += part["duration"]
+
+        total_duration = round(cumulative_time, 3)
+
+        # Cleanup temp part files
+        try:
+            if os.path.exists(concat_list_path):
+                os.remove(concat_list_path)
+            for part in part_results:
+                if part and os.path.exists(part["audio_path"]):
+                    os.remove(part["audio_path"])
+        except Exception:
+            pass
+
+    # Generate clean SRT subtitles
+    srt_content = words_to_srt(words)
     with open(srt_path, "w", encoding="utf-8") as f_srt:
         f_srt.write(srt_content)
 
@@ -396,8 +664,7 @@ async def synthesize_speech(
     with open(json_path, "w", encoding="utf-8") as f_json:
         json.dump(words, f_json, indent=2, ensure_ascii=False)
 
-    # Get precise duration
-    total_duration = max_end_time
+    # Re-probe final duration
     try:
         from audio_tools import probe_duration
         probed = probe_duration(audio_path)
@@ -406,7 +673,8 @@ async def synthesize_speech(
     except Exception:
         pass
 
-    return {
+    final_result = {
+        "job_id": job_id,
         "audio_path": audio_path,
         "audio_filename": audio_filename,
         "srt_path": srt_path,
@@ -416,8 +684,12 @@ async def synthesize_speech(
         "words": words,
         "duration": total_duration,
         "clean_text": clean_text,
+        "chunks_count": total_chunks,
         "engine": "edge-tts",
         "voice": voice,
         "speed": speed,
         "pitch": pitch
     }
+
+    set_job_progress(job_id, 100, "completed", "Voice generation complete! (100%)", is_done=True, result=final_result)
+    return final_result
