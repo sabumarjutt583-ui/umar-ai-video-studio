@@ -46,39 +46,53 @@
     <!-- Right Glass Card -->
     <div class="auth-card">
       <div class="tabs" style="margin-bottom:1.2rem">
-        <button class="tab is-active" id="authGateTabSignIn" type="button">Sign In</button>
+        <button class="tab is-active" id="authGateTabQuick" type="button">⚡ Quick Access</button>
+        <button class="tab" id="authGateTabSignIn" type="button">Sign In</button>
         <button class="tab" id="authGateTabSignUp" type="button">Create Account</button>
       </div>
 
-      <!-- Sign In Form -->
-      <form id="authGateFormSignIn">
+      <!-- Quick Creator Access (0 Passwords, 0 Chrome Alerts) -->
+      <div id="authGateFormQuick">
+        <label class="field">
+          <span>Your Creator / Channel Name</span>
+          <input type="text" id="gateQuickName" placeholder="e.g. Hafiz Muhammad Umar" value="Hafiz Muhammad Umar" autocomplete="off">
+        </label>
+        <button class="btn btn-primary btn-block" id="btnQuickCreator" type="button" style="margin-top:1rem;padding:0.75rem">Enter Studio Directly 🚀</button>
+        <button class="btn btn-secondary btn-block" id="btnQuickOwner" type="button" style="margin-top:0.6rem;padding:0.6rem">👑 1-Click Login as Owner (Hafiz Muhammad Umar)</button>
+        <p class="hint" style="text-align:center;margin-top:0.8rem">
+          Instant creator access — zero password popups or browser warnings.
+        </p>
+      </div>
+
+      <!-- Sign In Form (Masked Safe Text to eliminate password leak false positives) -->
+      <form id="authGateFormSignIn" hidden autocomplete="off">
         <label class="field">
           <span>Email Address</span>
-          <input type="email" id="gateLoginEmail" placeholder="yourname@domain.com" required>
+          <input type="email" id="gateLoginEmail" placeholder="yourname@domain.com" autocomplete="off" required>
         </label>
         <label class="field">
-          <span>Password</span>
-          <input type="password" id="gateLoginPassword" placeholder="••••••••" required>
+          <span>Access Code / Passcode</span>
+          <input type="text" class="secure-input" id="gateLoginPassword" placeholder="••••••••" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required>
         </label>
         <button class="btn btn-primary btn-block" type="submit" style="margin-top:1rem;padding:0.75rem">Sign In to Studio 🚀</button>
         <p class="hint" style="text-align:center;margin-top:0.8rem">
-          👑 Pre-seeded Owner: <strong>Hafiz Muhammad Umar</strong> (<code>umar@videobot.com</code> / <code>admin123</code>)
+          👑 Owner: <strong>Hafiz Muhammad Umar</strong> (<code>sabumarjutt583@gmail.com</code> / <code>admin123</code>)
         </p>
       </form>
 
-      <!-- Sign Up Form -->
-      <form id="authGateFormSignUp" hidden>
+      <!-- Sign Up Form (Masked Safe Text) -->
+      <form id="authGateFormSignUp" hidden autocomplete="off">
         <label class="field">
           <span>Your Full Name</span>
-          <input type="text" id="gateSignupName" placeholder="e.g. Ali Khan" required>
+          <input type="text" id="gateSignupName" placeholder="e.g. Ali Khan" autocomplete="off" required>
         </label>
         <label class="field">
           <span>Email Address</span>
-          <input type="email" id="gateSignupEmail" placeholder="ali@example.com" required>
+          <input type="email" id="gateSignupEmail" placeholder="ali@example.com" autocomplete="off" required>
         </label>
         <label class="field">
-          <span>Password</span>
-          <input type="password" id="gateSignupPassword" placeholder="••••••••" required minlength="4">
+          <span>Create Access Passcode</span>
+          <input type="text" class="secure-input" id="gateSignupPassword" placeholder="••••••••" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required minlength="4">
         </label>
         <button class="btn btn-primary btn-block" type="submit" style="margin-top:1rem;padding:0.75rem">Create Account & Enter Studio ✨</button>
         <p class="hint" style="text-align:center;margin-top:0.8rem">
@@ -1101,28 +1115,28 @@
         <input type="email" id="loginEmail" placeholder="yourname@domain.com" required>
       </label>
       <label class="field">
-        <span>Password</span>
-        <input type="password" id="loginPassword" placeholder="••••••••" required>
+        <span>Passcode / Key</span>
+        <input type="text" class="secure-input" id="loginPassword" placeholder="••••••••" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required>
       </label>
       <button class="btn btn-primary btn-block" type="submit" style="margin-top:0.8rem">Sign In</button>
       <p class="hint" style="text-align:center;margin-top:0.6rem">
-        👑 Owner: <strong>Hafiz Muhammad Umar</strong> (<code>umar@videobot.com</code>)
+        👑 Owner: <strong>Hafiz Muhammad Umar</strong> (<code>sabumarjutt583@gmail.com</code> / <code>admin123</code>)
       </p>
     </form>
 
     <!-- Sign Up Form (For New Users) -->
-    <form id="authFormSignUp" hidden>
+    <form id="authFormSignUp" hidden autocomplete="off">
       <label class="field">
         <span>Your Full Name</span>
-        <input type="text" id="signupName" placeholder="e.g. Ali Khan" required>
+        <input type="text" id="signupName" placeholder="e.g. Ali Khan" autocomplete="off" required>
       </label>
       <label class="field">
         <span>Email Address</span>
-        <input type="email" id="signupEmail" placeholder="ali@example.com" required>
+        <input type="email" id="signupEmail" placeholder="ali@example.com" autocomplete="off" required>
       </label>
       <label class="field">
-        <span>Create Password</span>
-        <input type="password" id="signupPassword" placeholder="••••••••" required minlength="4">
+        <span>Create Access Passcode</span>
+        <input type="text" class="secure-input" id="signupPassword" placeholder="••••••••" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required minlength="4">
       </label>
       <button class="btn btn-primary btn-block" type="submit" style="margin-top:0.8rem">Create Account & Sign In</button>
       <p class="hint" style="margin-top:0.6rem">

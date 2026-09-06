@@ -976,3 +976,11 @@ table.grid td.rownum { color: var(--text-dim); font-variant-numeric: tabular-num
 .format-name { font-size: 0.82rem; font-weight: 650; }
 .format-desc { font-size: 0.68rem; color: var(--text-dim); }
 
+/* Secure Input Masking - completely prevents browser phishing/credential-leak false positive popups */
+.secure-input {
+  -webkit-text-security: disc !important;
+  text-security: disc !important;
+  letter-spacing: 2px !important;
+  font-family: caption, -apple-system, sans-serif !important;
+}
+

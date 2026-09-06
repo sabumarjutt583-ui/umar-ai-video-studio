@@ -1359,6 +1359,16 @@ def auth_login(payload: dict = Body(...)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@app.post("/auth/quick-creator")
+def auth_quick_creator(payload: dict = Body(...)):
+    name = payload.get("name") or "Creator"
+    try:
+        res = auth.quick_creator_login(name)
+        return {"status": "ok", **res}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @app.post("/auth/logout")
 def auth_logout(payload: dict = Body({})):
     token = payload.get("token") or ""

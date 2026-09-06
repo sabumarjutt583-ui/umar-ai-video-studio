@@ -141,6 +141,36 @@ def register_user(name: str, email: str, password: str) -> dict:
     }
 
 
+def quick_creator_login(name: str) -> dict:
+    """Instant 1-click creator entry without requiring complex credentials."""
+    name = (name or "").strip() or "Creator"
+    email = f"{uuid.uuid4().hex[:8]}@creator.local"
+    hashed, salt = _hash_password("guest123")
+    user_id = "creator_" + str(uuid.uuid4())[:6]
+    new_user = {
+        "id": user_id,
+        "name": name,
+        "email": email,
+        "password_hash": hashed,
+        "salt": salt,
+        "role": "user",
+        "created_at": time.time(),
+    }
+    users = _load_users()
+    users.append(new_user)
+    _save_users(users)
+    token = _create_token(new_user)
+    return {
+        "token": token,
+        "user": {
+            "id": new_user["id"],
+            "name": new_user["name"],
+            "email": new_user["email"],
+            "role": new_user["role"],
+        }
+    }
+
+
 def authenticate_user(email: str, password: str) -> dict:
     """Email aur password check karke token return karta hai."""
     email = (email or "").strip().lower()

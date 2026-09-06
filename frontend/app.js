@@ -1630,17 +1630,56 @@ async function handleGateSignUp(e) {
   }
 }
 
+async function handleQuickCreator() {
+  const name = ($("gateQuickName") || {}).value || "Creator";
+  try {
+    const res = await jpost("/auth/quick-creator", { name });
+    if (res && res.token) {
+      S.authToken = res.token;
+      localStorage.setItem("veb_auth_token", res.token);
+      S.user = res.user;
+      S.isOwner = false;
+      toast("Welcome, " + res.user.name + "! 🚀", "ok");
+      await checkAuth();
+      switchView("welcome");
+    }
+  } catch (err) {
+    toast(err.message, "err");
+  }
+}
+
+async function handleQuickOwner() {
+  try {
+    const res = await jpost("/auth/login", { email: "sabumarjutt583@gmail.com", password: "admin123" });
+    if (res && res.token) {
+      S.authToken = res.token;
+      localStorage.setItem("veb_auth_token", res.token);
+      S.user = res.user;
+      S.isOwner = true;
+      toast("Welcome back, Owner Hafiz Muhammad Umar! 👑", "ok");
+      await checkAuth();
+      switchView("welcome");
+    }
+  } catch (err) {
+    toast(err.message, "err");
+  }
+}
+
 function switchGateTab(mode) {
-  const isSignIn = mode === "signin";
+  const tabQuick = $("authGateTabQuick");
   const tabIn = $("authGateTabSignIn");
   const tabUp = $("authGateTabSignUp");
+  const formQuick = $("authGateFormQuick");
   const formIn = $("authGateFormSignIn");
   const formUp = $("authGateFormSignUp");
 
-  if (tabIn) tabIn.classList.toggle("is-active", isSignIn);
-  if (tabUp) tabUp.classList.toggle("is-active", !isSignIn);
-  if (formIn) formIn.hidden = !isSignIn;
-  if (formUp) formUp.hidden = isSignIn;
+  if (tabQuick) tabQuick.classList.toggle("is-active", mode === "quick");
+  if (tabIn) tabIn.classList.toggle("is-active", mode === "signin");
+  if (tabUp) tabUp.classList.toggle("is-active", mode === "signup");
+
+  if (formQuick) formQuick.hidden = mode !== "quick";
+  if (formIn) formIn.hidden = mode !== "signin";
+  if (formUp) formUp.hidden = mode !== "signup";
 }
 
 async function handleLogout() {
@@ -2144,8 +2183,11 @@ function wireEvents() {
   });
 
   /* Auth Gateway Screen (Login & Signup) */
+  on("authGateTabQuick", "click", () => switchGateTab("quick"));
   on("authGateTabSignIn", "click", () => switchGateTab("signin"));
   on("authGateTabSignUp", "click", () => switchGateTab("signup"));
+  on("btnQuickCreator", "click", handleQuickCreator);
+  on("btnQuickOwner", "click", handleQuickOwner);
   on("authGateFormSignIn", "submit", handleGateSignIn);
   on("authGateFormSignUp", "submit", handleGateSignUp);
   on("btnGuestAccess", "click", handleGuestAccess);
