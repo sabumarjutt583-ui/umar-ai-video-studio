@@ -1,0 +1,11 @@
+[
+  {
+    "id": "owner_1",
+    "name": "Hafiz Muhammad Umar",
+    "email": "umar@videobot.com",
+    "password_hash": "097b9f5d155186769cf83975f451a4fffe98770a313a7929664a84fafab36f69",
+    "salt": "d13f87512ca94e36",
+    "role": "owner",
+    "created_at": 1788666054.8029895
+  }
+]

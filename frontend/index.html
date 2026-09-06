@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video Editing Bot v11</title>
+<link rel="stylesheet" href="styles.css?v=25">
+</head>
+<body>
+
+<!-- ===================== FULLSCREEN AUTH SCREEN (GATEWAY) ===================== -->
+<div class="auth-screen" id="authScreen" hidden>
+  <div class="auth-container">
+    <!-- Left Hero -->
+    <div class="auth-hero">
+      <div class="auth-brand">
+        <div class="auth-brand-logo" id="authLogoWrap">
+          <img id="authCustomLogo" class="auth-brand-img" alt="Logo" style="display:none">
+          <span id="authDefaultLogo">🎬</span>
+        </div>
+        <div>
+          <span class="auth-brand-title" id="authToolName">Umar AI Video Studio</span>
+        </div>
+      </div>
+
+      <div class="creator-badge" style="width:fit-content;margin:0" title="Verified Creator & Owner">
+        <span class="creator-crown">👑</span>
+        <span class="creator-label">Creator & Owner:</span>
+        <strong class="creator-name">Hafiz Muhammad Umar</strong>
+        <span class="creator-check">✓</span>
+      </div>
+
+      <h1 class="auth-hero-title">Create Studio-Quality AI Videos in Seconds</h1>
+      <p class="auth-hero-desc">
+        Turn narration voiceovers, word-level timestamps, and media clips into dynamic, highly engaging videos. Powered by NVIDIA NVENC GPU hardware acceleration.
+      </p>
+
+      <div class="auth-feature-list">
+        <div class="auth-feat-item"><span class="auth-feat-icon">⚡</span> <span>GPU Hardware Acceleration (60 FPS)</span></div>
+        <div class="auth-feat-item"><span class="auth-feat-icon">🎬</span> <span>Interactive Precision Multi-Track Timeline</span></div>
+        <div class="auth-feat-item"><span class="auth-feat-icon">💬</span> <span>Word-by-Word Viral Subtitles & FX</span></div>
+        <div class="auth-feat-item"><span class="auth-feat-icon">🎙️</span> <span>Multi-Part Voice Stitcher & Audio Scrubber</span></div>
+      </div>
+    </div>
+
+    <!-- Right Glass Card -->
+    <div class="auth-card">
+      <div class="tabs" style="margin-bottom:1.2rem">
+        <button class="tab is-active" id="authGateTabSignIn" type="button">Sign In</button>
+        <button class="tab" id="authGateTabSignUp" type="button">Create Account</button>
+      </div>
+
+      <!-- Sign In Form -->
+      <form id="authGateFormSignIn">
+        <label class="field">
+          <span>Email Address</span>
+          <input type="email" id="gateLoginEmail" placeholder="yourname@domain.com" required>
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input type="password" id="gateLoginPassword" placeholder="••••••••" required>
+        </label>
+        <button class="btn btn-primary btn-block" type="submit" style="margin-top:1rem;padding:0.75rem">Sign In to Studio 🚀</button>
+        <p class="hint" style="text-align:center;margin-top:0.8rem">
+          👑 Pre-seeded Owner: <strong>Hafiz Muhammad Umar</strong> (<code>umar@videobot.com</code> / <code>admin123</code>)
+        </p>
+      </form>
+
+      <!-- Sign Up Form -->
+      <form id="authGateFormSignUp" hidden>
+        <label class="field">
+          <span>Your Full Name</span>
+          <input type="text" id="gateSignupName" placeholder="e.g. Ali Khan" required>
+        </label>
+        <label class="field">
+          <span>Email Address</span>
+          <input type="email" id="gateSignupEmail" placeholder="ali@example.com" required>
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input type="password" id="gateSignupPassword" placeholder="••••••••" required minlength="4">
+        </label>
+        <button class="btn btn-primary btn-block" type="submit" style="margin-top:1rem;padding:0.75rem">Create Account & Enter Studio ✨</button>
+        <p class="hint" style="text-align:center;margin-top:0.8rem">
+          Account banate hi aapko apna personalized dashboard milega.
+        </p>
+      </form>
+
+      <div style="margin-top:1rem;text-align:center">
+        <button class="btn btn-ghost btn-sm" id="btnGuestAccess" type="button" style="color:var(--text-dim)">Continue as Guest Preview →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MAIN APP SHELL ===================== -->
+<div class="app-shell" id="appShell">
+
+  <!-- ========== LEFT NAVIGATION SIDEBAR ========== -->
+  <aside class="app-sidebar" id="appSidebar">
+    <!-- Corner Tool Brand (Custom Logo + Tool Name + Owner Edit) -->
+    <div class="sidebar-brand">
+      <div class="sidebar-logo-row">
+        <div class="sidebar-logo-wrap" id="sidebarLogoWrap" title="Tool Logo">
+          <img id="sidebarCustomLogo" class="sidebar-custom-logo" alt="Logo" style="display:none">
+          <span id="sidebarDefaultLogo">🎬</span>
+          <button class="logo-edit-btn" id="logoUploadTrigger" type="button" title="Upload custom tool logo (Owner only)" style="display:none">📷</button>
+          <input type="file" id="logoFileInput" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden>
+        </div>
+        <div style="min-width:0;flex:1">
+          <div class="sidebar-tool-name" id="sidebarToolName">Umar AI Video Studio</div>
+        </div>
+      </div>
+
+      <!-- Creator Badge (Non-removable) -->
+      <div class="sidebar-creator-tag" title="Official Creator & Owner (Non-removable)">
+        <span>👑</span>
+        <span>Creator:</span>
+        <strong>Hafiz Muhammad Umar</strong>
+        <span>✓</span>
+      </div>
+    </div>
+
+    <!-- Navigation Menu Items -->
+    <nav class="sidebar-nav">
+      <button class="nav-item is-active" id="navItemWelcome" type="button">
+        <span class="nav-icon">🏠</span>
+        <span>Dashboard</span>
+      </button>
+
+      <button class="nav-item" id="navItemNewProject" type="button">
+        <span class="nav-icon">➕</span>
+        <span>Create Project</span>
+        <span class="nav-badge-pill">Start</span>
+      </button>
+
+      <button class="nav-item" id="navItemWorkflow" type="button">
+        <span class="nav-icon">🎛️</span>
+        <span data-i18n="view_workflow">Workflow Studio</span>
+      </button>
+
+      <button class="nav-item" id="navItemEditor" type="button">
+        <span class="nav-icon">🎬</span>
+        <span data-i18n="view_editor">Editing Panel</span>
+      </button>
+
+      <button class="nav-item" id="navItemProjects" type="button">
+        <span class="nav-icon">📁</span>
+        <span data-i18n="projects">My Projects</span>
+      </button>
+
+      <button class="nav-item" id="navItemAdmin" type="button">
+        <span class="nav-icon">⚙️</span>
+        <span data-i18n="admin_tools">Admin & Diagnostics</span>
+      </button>
+    </nav>
+
+    <!-- Bottom User Profile Card -->
+    <div class="sidebar-user">
+      <div class="user-info-mini">
+        <div class="user-avatar-mini" id="sidebarUserAvatar">👤</div>
+        <div class="user-text-mini">
+          <strong id="sidebarUserName">Hafiz Muhammad Umar</strong>
+          <small id="sidebarUserRole" class="pill ok" style="font-size:0.65rem;width:fit-content;padding:0 4px">Owner</small>
+        </div>
+      </div>
+      <button class="icon-btn" id="sidebarBtnLogout" type="button" title="Sign Out">🚪</button>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN CONTENT AREA ========== -->
+  <div class="main-content" id="mainContent">
+
+    <!-- Top Bar -->
+    <header class="app-header">
+      <div class="header-left">
+        <strong class="view-title" id="currentViewTitle">🏠 Dashboard & Overview</strong>
+      </div>
+
+      <div class="header-right">
+        <span id="healthBadge" class="badge badge-muted" title="">…</span>
+        <span id="sessionBadge" class="badge badge-muted">—</span>
+        <select id="langSelect" class="mini-select" aria-label="Language"></select>
+        <button id="themeBtn" class="icon-btn" type="button" title="Theme">◐</button>
+        <div class="creator-badge" style="padding:0.25rem 0.6rem;font-size:0.75rem" title="Official Creator">
+          <span>👑</span>
+          <strong class="creator-name">Hafiz Muhammad Umar</strong>
+          <span class="creator-check">✓</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- VIEW 1: WELCOME & DASHBOARD PANEL -->
+    <section class="view-panel" id="panelWelcome">
+      <div class="welcome-container">
+
+        <!-- Hero Greeting Banner -->
+        <div class="welcome-hero">
+          <div class="hero-content">
+            <h1 class="welcome-title">
+              Welcome to <span class="brand-highlight" id="welcomeToolName">Umar AI Video Studio</span>!
+            </h1>
+            <div class="creator-badge" style="width:fit-content;margin:0.2rem 0;font-size:0.85rem" title="Official Creator & Owner">
+              <span class="creator-crown">👑</span>
+              <span class="creator-label">Platform Creator & Owner:</span>
+              <strong class="creator-name">Hafiz Muhammad Umar</strong>
+              <span class="creator-check">✓</span>
+            </div>
+            <p class="welcome-subtitle">
+              Hello, <strong id="welcomeUserName">Hafiz Muhammad Umar</strong> 👋 Welcome to your dedicated AI video creation suite.
+              Transform your voiceovers, scripts, and visual media into viral, high-converting masterpiece videos in minutes. Powered by ultra-fast 60 FPS GPU hardware acceleration, intelligent word-by-word subtitle sync, and precision timeline controls.
+            </p>
+            <div class="welcome-badges">
+              <span class="hero-pill gold">👑 Built & Managed by Hafiz Muhammad Umar</span>
+              <span class="hero-pill green">⚡ NVIDIA NVENC GPU Hardware Accelerated (60 FPS)</span>
+              <span class="hero-pill">🎬 Multi-Track Precision Audio & Video Workbench</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Cards Grid -->
+        <div class="action-cards-grid">
+          <!-- Card 1: Create New Video Project (Hero Action) -->
+          <div class="action-card card-featured">
+            <div class="card-header-row">
+              <div class="card-icon-box">🚀</div>
+              <span class="card-badge primary">Primary Action</span>
+            </div>
+            <div class="card-body">
+              <h3>Create New Video Project</h3>
+              <p>Configure video aspect ratio (9:16 Shorts/Reels/TikTok, 16:9 YouTube), set project title, and enter the step-by-step studio.</p>
+            </div>
+            <button class="btn btn-primary card-action-btn" id="welcomeBtnNewProject" type="button">
+              ➕ Start New Video Project
+            </button>
+          </div>
+
+          <!-- Card 2: Interactive Timeline Workbench -->
+          <div class="action-card">
+            <div class="card-header-row">
+              <div class="card-icon-box cyan">🎬</div>
+              <span class="card-badge">PRO TIMELINE</span>
+            </div>
+            <div class="card-body">
+              <h3>Professional Timeline Studio</h3>
+              <p>Precision multi-track visual timeline workbench. Directly trim video clips, fine-tune word subtitles, and scrub audio with live playback.</p>
+            </div>
+            <button class="btn btn-ghost card-action-btn" id="welcomeBtnTimeline" type="button">
+              🎬 Open Timeline Studio
+            </button>
+          </div>
+
+          <!-- Card 3: 1-Click Viral Style Presets -->
+          <div class="action-card">
+            <div class="card-header-row">
+              <div class="card-icon-box amber">✨</div>
+              <span class="card-badge">1-Click Apply</span>
+            </div>
+            <div class="card-body">
+              <h3>1-Click Viral Style Presets</h3>
+              <p>Instantly apply Alex Hormozi kinetic fonts, Vox documentary zooms, or Cashcow faceless channel styles to your entire video.</p>
+            </div>
+            <button class="btn btn-ghost card-action-btn" id="welcomeBtnPresets" type="button">
+              ⚡ Explore Presets
+            </button>
+          </div>
+
+          <!-- Card 4: Saved Projects & History -->
+          <div class="action-card">
+            <div class="card-header-row">
+              <div class="card-icon-box">📁</div>
+              <span class="card-badge">Saved Library</span>
+            </div>
+            <div class="card-body">
+              <h3>Saved Projects & History</h3>
+              <p>Browse previously saved video projects, reload media assets, re-export in other resolutions, or continue previous drafts.</p>
+            </div>
+            <button class="btn btn-ghost card-action-btn" id="welcomeBtnProjects" type="button">
+              📂 View Saved Projects
+            </button>
+          </div>
+
+          <!-- Card 5: Self-Healing & Diagnostics -->
+          <div class="action-card">
+            <div class="card-header-row">
+              <div class="card-icon-box green">🩺</div>
+              <span class="card-badge">Self-Healing</span>
+            </div>
+            <div class="card-body">
+              <h3>Diagnostics & Direct Error Fixes</h3>
+              <p>1-click timeline duration synchronizer, temporary cache cleaner, NVENC check, and real-time render log console.</p>
+            </div>
+            <button class="btn btn-ghost card-action-btn" id="welcomeBtnDiagnostics" type="button">
+              🛠️ Open Diagnostics
+            </button>
+          </div>
+        </div>
+
+        <!-- 4-Step Visual Creation Roadmap -->
+        <div class="roadmap-box">
+          <div class="roadmap-title">⚡ How It Works — 4 Easy Steps</div>
+          <div class="roadmap-steps-grid">
+            <div class="roadmap-step">
+              <span class="roadmap-step-num">STEP 01</span>
+              <span class="roadmap-step-name">🎙️ Voiceover</span>
+              <span class="roadmap-step-desc">Upload your single voice file or join multi-part recordings automatically.</span>
+            </div>
+            <div class="roadmap-step">
+              <span class="roadmap-step-num">STEP 02</span>
+              <span class="roadmap-step-name">🕒 Timing & Cues</span>
+              <span class="roadmap-step-desc">Provide SRT, word-level JSON, or manual timing table to sync sentences.</span>
+            </div>
+            <div class="roadmap-step">
+              <span class="roadmap-step-num">STEP 03</span>
+              <span class="roadmap-step-name">🎞️ Media & Motion</span>
+              <span class="roadmap-step-desc">Drop video clips/images, set Ken Burns zooms, stickers, and music.</span>
+            </div>
+            <div class="roadmap-step">
+              <span class="roadmap-step-num">STEP 04</span>
+              <span class="roadmap-step-name">🚀 Render & Export</span>
+              <span class="roadmap-step-desc">One-click assembly with hardware NVENC GPU encoding and live progress.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- VIEW 2: STEP-BY-STEP WORKFLOW STUDIO (Hidden by default, opened on project create/edit) -->
+    <section class="view-panel" id="panelWorkflow" hidden>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div>
+          <h2 style="font-size:1.3rem">🎛️ Step-by-Step Video Creation Studio</h2>
+          <small class="hint">Upload voice, timing, and media clips to assemble your video</small>
+        </div>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-ghost btn-sm" id="btnBackToDashboard" type="button">🏠 Dashboard</button>
+          <button class="btn btn-ghost btn-sm" id="btnWorkflowToEditor" type="button">🎬 Open Timeline Workbench</button>
+        </div>
+      </div>
+
+      <!-- Step Rail Navigation -->
+      <nav class="rail" id="rail"></nav>
+
+      <main class="layout">
+        <!-- ========== LEFT: WORKFLOW ========== -->
+
+  <div class="workflow">
+
+    <!-- ---------- STEP 1: VOICE ---------- -->
+    <section class="card" id="step-voice" data-step="voice">
+      <header class="card-head">
+        <h2><span class="step-num">1</span> <span data-i18n="step_voice">Voice / Narration</span></h2>
+        <span class="pill" id="voicePill" data-i18n="not_set">not set</span>
+      </header>
+
+      <div class="tabs" data-tabs="voice">
+        <button class="tab is-active" data-tab="single" type="button" data-i18n="voice_single">Single file</button>
+        <button class="tab" data-tab="parts" type="button" data-i18n="voice_multi">Multi-part</button>
+      </div>
+
+      <div class="tab-body is-active" data-tabbody="single">
+        <label class="drop" id="voiceDrop">
+          <input type="file" id="voiceInput" accept="audio/*,video/*" hidden>
+          <span class="drop-icon">🎙</span>
+          <span data-i18n="drop_voice">Drop your voice file here or click to choose</span>
+          <small data-i18n="hint_voice">mp3, wav, m4a, aac — video files also work</small>
+        </label>
+      </div>
+
+      <div class="tab-body" data-tabbody="parts">
+        <label class="drop" id="voicePartsDrop">
+          <input type="file" id="voicePartsInput" accept="audio/*,video/*" multiple hidden>
+          <span class="drop-icon">🎧</span>
+          <span data-i18n="drop_voice_parts">Choose all parts together (part1, part2, …)</span>
+          <small data-i18n="hint_voice_parts">They are joined in natural order automatically</small>
+        </label>
+        <div class="row">
+          <label class="field">
+            <span data-i18n="gap_seconds">Gap between parts (sec)</span>
+            <input type="number" id="voiceGap" value="0" min="0" max="10" step="0.1">
+          </label>
+          <label class="field">
+            <span data-i18n="part_order">Order</span>
+            <select id="voiceOrder">
+              <option value="natural" data-i18n="order_natural">Natural (part2 before part10)</option>
+              <option value="as_uploaded" data-i18n="order_uploaded">As uploaded</option>
+            </select>
+          </label>
+        </div>
+        <div id="voicePartsList" class="mini-list"></div>
+      </div>
+    </section>
+
+    <!-- ---------- STEP 2: TIMING ---------- -->
+    <section class="card" id="step-timing" data-step="timing">
+      <header class="card-head">
+        <h2><span class="step-num">2</span> <span data-i18n="step_timing">Timing / Segments</span></h2>
+        <span class="pill" id="timingPill" data-i18n="not_set">not set</span>
+      </header>
+
+      <div class="tabs" data-tabs="timing">
+        <button class="tab is-active" data-tab="file" type="button" data-i18n="timing_file">Upload file</button>
+        <button class="tab" data-tab="paste" type="button" data-i18n="timing_paste">Paste box</button>
+        <button class="tab" data-tab="manual" type="button" data-i18n="timing_manual">Manual table</button>
+        <button class="tab" data-tab="group" type="button" data-i18n="timing_group">Sentence grouping</button>
+        <button class="tab" data-tab="scene" type="button" data-i18n="timing_scene">Scene map</button>
+        <button class="tab" data-tab="table" type="button" data-i18n="timing_table">Scene time table</button>
+      </div>
+
+      <div class="tab-body is-active" data-tabbody="file">
+        <label class="drop">
+          <input type="file" id="tsInput" accept=".srt,.json,.txt,.vtt" hidden>
+          <span class="drop-icon">🕒</span>
+          <span data-i18n="drop_ts">Drop SRT or word-level JSON</span>
+          <small data-i18n="hint_ts">JSON gives word-by-word captions + sentence grouping</small>
+        </label>
+      </div>
+
+      <div class="tab-body" data-tabbody="paste">
+        <label class="field">
+          <span data-i18n="paste_label">Paste SRT or JSON here</span>
+          <textarea id="tsPaste" rows="8" spellcheck="false"
+            placeholder="1&#10;00:00:00,000 --> 00:00:03,500&#10;First line…"></textarea>
+        </label>
+        <div class="row">
+          <label class="field">
+            <span data-i18n="format">Format</span>
+            <select id="tsFormat">
+              <option value="auto" data-i18n="fmt_auto">Auto-detect</option>
+              <option value="srt">SRT</option>
+              <option value="json">JSON</option>
+            </select>
+          </label>
+          <button class="btn btn-primary" id="tsPasteBtn" type="button" data-i18n="apply">Apply</button>
+        </div>
+      </div>
+
+      <div class="tab-body" data-tabbody="manual">
+        <div class="row">
+          <label class="field">
+            <span data-i18n="manual_mode">Mode</span>
+            <select id="manualMode">
+              <option value="duration" data-i18n="mode_duration">Duration only (easiest)</option>
+              <option value="start_end" data-i18n="mode_startend">Start + End</option>
+            </select>
+          </label>
+          <button class="btn btn-ghost" id="manualAddRow" type="button" data-i18n="add_row">+ Add row</button>
+          <button class="btn btn-ghost" id="manualFromSegs" type="button" data-i18n="load_current">Load current segments</button>
+        </div>
+        <div class="table-wrap">
+          <table class="grid" id="manualTable">
+            <thead><tr>
+              <th style="width:3rem">#</th>
+              <th class="col-start" data-i18n="start">Start</th>
+              <th class="col-end" data-i18n="end">End</th>
+              <th class="col-dur" data-i18n="duration">Duration</th>
+              <th data-i18n="text">Text</th>
+              <th style="width:3rem"></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="row">
+          <button class="btn btn-primary" id="manualApply" type="button" data-i18n="apply_table">Apply table</button>
+          <span class="hint" id="manualHint"></span>
+        </div>
+      </div>
+
+      <div class="tab-body" data-tabbody="group">
+        <div class="row">
+          <label class="field">
+            <span data-i18n="sentences_per_clip">Sentences per clip</span>
+            <input type="number" id="groupN" value="1" min="1" max="10">
+          </label>
+          <button class="btn btn-primary" id="groupBtn" type="button" data-i18n="regroup">Regroup</button>
+        </div>
+        <p class="hint" id="groupHint" data-i18n="hint_group">Needs word-level JSON timestamps.</p>
+      </div>
+
+      <div class="tab-body" data-tabbody="scene">
+        <label class="drop">
+          <input type="file" id="sceneInput" accept=".txt,.md,.srt" hidden>
+          <span class="drop-icon">🎬</span>
+          <span data-i18n="drop_scene">Drop your scene-map / script file</span>
+        </label>
+        <label class="field">
+          <span data-i18n="scene_paste">…or paste it</span>
+          <textarea id="scenePaste" rows="6" spellcheck="false"></textarea>
+        </label>
+        <button class="btn btn-primary" id="scenePasteBtn" type="button" data-i18n="apply">Apply</button>
+        <p class="hint" data-i18n="hint_scene_any_lang">Works in any language (English, Urdu, Hindi, Arabic, Russian, Japanese, Korean, Chinese…). Header can be “Scene 1”, “シーン1”, “Сцена 1”, “سین 1” or just “1”.</p>
+      </div>
+
+      <div class="tab-body" data-tabbody="table">
+        <p class="hint" data-i18n="hint_scene_table">Fastest for 200–300 scenes: copy scene number, start, end straight from Excel/Sheets. Tab, comma, semicolon or pipe all work; time can be 12.5 or 00:04.5 or 00:01:20.5. Word-level JSON is NOT needed here.</p>
+        <label class="field">
+          <span data-i18n="scene_table_paste">Paste scene table (scene, start, end)</span>
+          <textarea id="sceneTablePaste" rows="8" spellcheck="false"
+            placeholder="1&#9;0.0&#9;4.5&#10;2&#9;4.5&#9;9.25&#10;3&#9;00:09.25&#9;00:14.0"></textarea>
+        </label>
+        <div class="row wrap">
+          <button class="btn btn-primary" id="sceneTableBtn" type="button" data-i18n="apply">Apply</button>
+          <label class="btn btn-ghost" data-drop>
+            <input type="file" id="sceneTableInput" accept=".csv,.tsv,.txt" hidden>
+            <span data-i18n="upload_scene_table">Upload .csv / .tsv / .txt</span>
+          </label>
+        </div>
+        <div id="sceneTableInfo" class="summary"></div>
+      </div>
+
+      <div id="segSummary" class="summary"></div>
+    </section>
+
+    <!-- ---------- STEP 3: MEDIA ---------- -->
+    <section class="card" id="step-media" data-step="media">
+      <header class="card-head">
+        <h2><span class="step-num">3</span> <span data-i18n="step_media">Your media</span></h2>
+        <span class="pill" id="mediaPill" data-i18n="not_set">not set</span>
+      </header>
+
+      <div class="row" id="mediaDropRow">
+        <label class="btn btn-ghost" data-drop>
+          <input type="file" id="mediaInput" accept="image/*,video/*" multiple hidden>
+          <span data-i18n="upload_media">＋ Upload images / videos</span>
+        </label>
+        <label class="btn btn-ghost" data-drop>
+          <input type="file" id="zipInput" accept=".zip" hidden>
+          <span data-i18n="import_zip">🗜 Import ZIP</span>
+        </label>
+        <span class="hint" data-i18n="hint_media">Filenames with numbers (1_beach.jpg, scene3.mp4) auto-assign.</span>
+      </div>
+
+      <div id="segmentList" class="seg-list"></div>
+    </section>
+
+    <!-- ---------- STEP 4: LOOK ---------- -->
+    <section class="card" id="step-look" data-step="look">
+      <header class="card-head">
+        <h2><span class="step-num">4</span> <span data-i18n="step_look">Look &amp; motion</span></h2>
+      </header>
+      <div class="grid-fields">
+        <label class="field"><span data-i18n="effect">Motion effect</span><select id="optEffect"></select></label>
+        <label class="field"><span data-i18n="transition">Transition</span><select id="optTransition"></select></label>
+        <label class="field"><span data-i18n="trans_speed">Transition speed</span><select id="optSpeed"></select></label>
+        <label class="field"><span data-i18n="color_filter">Color filter</span><select id="optFilter"></select></label>
+        <label class="field"><span data-i18n="aspect">Aspect ratio</span><select id="optAspect"></select></label>
+        <label class="field"><span data-i18n="resolution">Resolution</span><select id="optRes"></select></label>
+      </div>
+    </section>
+
+    <!-- ---------- STEP 5: CAPTIONS ---------- -->
+    <section class="card" id="step-captions" data-step="captions">
+      <header class="card-head">
+        <h2><span class="step-num">5</span> <span data-i18n="step_captions">Captions</span></h2>
+        <label class="switch">
+          <input type="checkbox" id="capEnabled" checked>
+          <span data-i18n="enabled">Enabled</span>
+        </label>
+      </header>
+
+      <div class="row">
+        <label class="field">
+          <span data-i18n="preset">Preset</span>
+          <select id="capPreset"></select>
+        </label>
+        <label class="field">
+          <span data-i18n="cap_mode">Mode</span>
+          <select id="capMode"></select>
+        </label>
+        <label class="field">
+          <span data-i18n="cap_script">Script / language</span>
+          <select id="capLang"></select>
+        </label>
+      </div>
+
+      <div class="grid-fields">
+        <label class="field"><span data-i18n="font">Font</span><select id="capFont"></select></label>
+        <label class="field">
+          <span data-i18n="font_size">Font size <b id="capSizeVal">64</b></span>
+          <input type="range" id="capSize" min="20" max="140" step="1" value="64">
+        </label>
+        <label class="field"><span data-i18n="color">Text color</span><input type="color" id="capColor" value="#FFFFFF"></label>
+        <label class="field"><span data-i18n="highlight">Karaoke highlight</span><input type="color" id="capHighlight" value="#FFD166"></label>
+        <label class="field"><span data-i18n="position">Position</span>
+          <select id="capPosition">
+            <option value="bottom" data-i18n="pos_bottom">Bottom</option>
+            <option value="middle" data-i18n="pos_middle">Middle</option>
+            <option value="top" data-i18n="pos_top">Top</option>
+          </select>
+        </label>
+        <label class="field"><span data-i18n="animation">Animation</span><select id="capAnim"></select></label>
+        <label class="field">
+          <span data-i18n="margin_v">Vertical margin <b id="capMarginVal">80</b></span>
+          <input type="range" id="capMargin" min="0" max="400" step="5" value="80">
+        </label>
+        <label class="field">
+          <span data-i18n="max_chars">Max chars per line</span>
+          <input type="number" id="capMaxChars" min="0" max="80" placeholder="auto">
+        </label>
+      </div>
+
+      <div class="row wrap">
+        <label class="switch"><input type="checkbox" id="capOutline" checked><span data-i18n="outline">Outline</span></label>
+        <label class="switch"><input type="checkbox" id="capBox"><span data-i18n="box">Background box</span></label>
+        <label class="switch"><input type="checkbox" id="capBold" checked><span data-i18n="bold">Bold</span></label>
+        <label class="switch"><input type="checkbox" id="capCaps"><span data-i18n="all_caps">ALL CAPS</span></label>
+      </div>
+
+      <div class="cap-preview" id="capPreview"><span>Preview</span></div>
+
+      <label class="field">
+        <span data-i18n="custom_font">Custom font file (optional)</span>
+        <input type="file" id="capFontFile" accept=".ttf,.otf,.ttc">
+      </label>
+      <div class="row" style="margin-block-start:0.5rem">
+        <span class="pill ok" id="capFontPill" hidden></span>
+        <button class="btn btn-ghost btn-sm" id="capFontClear" type="button" hidden data-i18n="remove">Remove</button>
+      </div>
+    </section>
+
+    <!-- ---------- STEP 6: AUDIO ---------- -->
+    <section class="card" id="step-audio" data-step="audio">
+      <header class="card-head">
+        <h2><span class="step-num">6</span> <span data-i18n="step_audio">Audio</span></h2>
+        <span class="pill" id="musicPill" data-i18n="no_music">no music</span>
+      </header>
+
+      <div class="row">
+        <label class="btn btn-ghost" data-drop>
+          <input type="file" id="musicInput" accept="audio/*" hidden>
+          <span data-i18n="upload_music">🎵 Background music</span>
+        </label>
+        <button class="btn btn-ghost btn-danger-ghost" id="musicRemove" type="button" data-i18n="remove">Remove</button>
+      </div>
+
+      <div class="grid-fields">
+        <label class="field">
+          <span data-i18n="music_volume">Music volume <b id="musicVolVal">20%</b></span>
+          <input type="range" id="musicVol" min="0" max="100" step="1" value="20">
+        </label>
+        <label class="field">
+          <span data-i18n="video_audio_mode">Original video audio</span>
+          <select id="vidAudioMode">
+            <option value="mute" data-i18n="mute">Mute</option>
+            <option value="keep" data-i18n="mix">Mix with voice</option>
+          </select>
+        </label>
+        <label class="field">
+          <span data-i18n="video_audio_volume">Video audio volume <b id="vidAudioVolVal">40%</b></span>
+          <input type="range" id="vidAudioVol" min="0" max="100" step="1" value="40">
+        </label>
+        <label class="field">
+          <span data-i18n="video_trim_mode">Long video: which part to cut</span>
+          <select id="vidTrimMode">
+            <option value="end" data-i18n="trim_end">Cut the end (keep beginning)</option>
+            <option value="start" data-i18n="trim_start">Cut the beginning (keep end)</option>
+            <option value="middle" data-i18n="trim_middle">Keep the middle</option>
+          </select>
+        </label>
+      </div>
+
+      <p class="hint" data-i18n="fit_hint">Short video: slowed smoothly → repeated up to 2× → and if still short, its last frame becomes a zooming image. The picture never freezes.</p>
+
+      <div class="row wrap">
+        <label class="switch"><input type="checkbox" id="ducking"><span data-i18n="ducking">Auto-duck music under voice</span></label>
+        <label class="switch"><input type="checkbox" id="musicFade" checked><span data-i18n="music_fade">Music fade in/out</span></label>
+      </div>
+
+      <h3 class="sub" data-i18n="sound_effects">Sound effects</h3>
+      <div class="row">
+        <label class="field"><span data-i18n="sfx">Effect</span><select id="sfxKey"></select></label>
+        <label class="field"><span data-i18n="at_second">At second</span><input type="number" id="sfxStart" value="0" min="0" step="0.1"></label>
+        <label class="field">
+          <span data-i18n="volume">Volume <b id="sfxVolVal">50%</b></span>
+          <input type="range" id="sfxVol" min="0" max="100" value="50">
+        </label>
+        <button class="btn btn-ghost" id="sfxAdd" type="button" data-i18n="add">Add</button>
+      </div>
+      <div id="sfxList" class="chip-list"></div>
+    </section>
+
+    <!-- ---------- STEP 7: OVERLAYS ---------- -->
+    <section class="card" id="step-overlays" data-step="overlays">
+      <header class="card-head">
+        <h2><span class="step-num">7</span> <span data-i18n="step_overlays">Stickers &amp; text</span></h2>
+      </header>
+
+      <div class="row wrap">
+        <label class="field"><span data-i18n="sticker">Sticker</span><select id="stkKey"></select></label>
+        <label class="field"><span data-i18n="position">Position</span><select id="stkPos" class="pos-select"></select></label>
+        <label class="field"><span data-i18n="scale">Size <b id="stkScaleVal">22%</b></span><input type="range" id="stkScale" min="5" max="60" value="22"></label>
+        <label class="field"><span data-i18n="opacity">Opacity <b id="stkOpVal">100%</b></span><input type="range" id="stkOp" min="10" max="100" value="100"></label>
+        <label class="field"><span data-i18n="at_second">At second</span><input type="number" id="stkStart" value="0" min="0" step="0.1"></label>
+        <label class="field"><span data-i18n="duration">Duration</span><input type="number" id="stkDur" value="3" min="0.2" step="0.1"></label>
+        <label class="switch"><input type="checkbox" id="stkWhole"><span data-i18n="whole_video">Whole video (watermark)</span></label>
+        <button class="btn btn-ghost" id="stkAdd" type="button" data-i18n="add">Add</button>
+      </div>
+
+      <div class="row">
+        <label class="btn btn-ghost" data-drop>
+          <input type="file" id="stkImgInput" accept="image/*" hidden>
+          <span data-i18n="upload_logo">🖼 Upload own logo / PNG</span>
+        </label>
+        <div id="customImgList" class="chip-list"></div>
+      </div>
+      <div id="stkList" class="chip-list"></div>
+
+      <h3 class="sub" data-i18n="custom_text">Custom text</h3>
+      <div class="row wrap">
+        <label class="field grow"><span data-i18n="text">Text</span><input type="text" id="txtValue" maxlength="120"></label>
+        <label class="field"><span data-i18n="font">Font</span><select id="txtFont"></select></label>
+        <label class="field"><span data-i18n="color">Color</span><input type="color" id="txtColor" value="#FFD166"></label>
+        <label class="field"><span data-i18n="font_size">Size</span><input type="number" id="txtSize" value="48" min="10" max="200" placeholder="e.g. 48"></label>
+        <label class="field"><span data-i18n="position">Position</span><select id="txtPos" class="pos-select"></select></label>
+        <label class="field"><span data-i18n="at_second">At second</span><input type="number" id="txtStart" value="0" min="0" step="0.1"></label>
+        <label class="field"><span data-i18n="duration">Duration</span><input type="number" id="txtDur" value="3" min="0.2" step="0.1"></label>
+        <label class="switch"><input type="checkbox" id="txtBox" checked><span data-i18n="box">Background box</span></label>
+        <button class="btn btn-ghost" id="txtAdd" type="button" data-i18n="add">Add</button>
+      </div>
+      <div id="txtList" class="chip-list"></div>
+    </section>
+
+    <!-- ---------- STEP 8: RENDER ---------- -->
+    <section class="card" id="step-render" data-step="render">
+      <header class="card-head">
+        <h2><span class="step-num">8</span> <span data-i18n="step_render">Check &amp; render</span></h2>
+        <label class="switch">
+          <input type="checkbox" id="smartTriggers">
+          <span data-i18n="smart_triggers">Smart sticker triggers</span>
+        </label>
+      </header>
+
+      <div class="row">
+        <button class="btn btn-ghost" id="validateBtn" type="button" data-i18n="validate">Check media</button>
+        <label class="switch"><input type="checkbox" id="skipValidation"><span data-i18n="skip_validation">Render anyway (skip checks)</span></label>
+      </div>
+      <div id="validationPanel" class="validation"></div>
+    </section>
+  </div>
+
+  <!-- ========== RIGHT: LIVE DASHBOARD ========== -->
+  <aside class="dash">
+    <div class="dash-card">
+      <div class="dash-head">
+        <h3 data-i18n="render_dashboard">Render dashboard</h3>
+        <span id="renderStatus" class="pill" data-i18n="idle">idle</span>
+      </div>
+
+      <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-meta">
+        <span id="progressPct">0%</span>
+        <span id="progressTime">—</span>
+      </div>
+      <p class="dash-msg" id="renderMessage" data-i18n="not_started">Not started yet.</p>
+
+      <ol class="stages" id="stageList"></ol>
+
+      <div class="row">
+        <button class="btn btn-primary btn-block" id="renderBtn" type="button" data-i18n="render_now">Render video</button>
+        <button class="btn btn-danger" id="cancelBtn" type="button" disabled data-i18n="cancel">Cancel</button>
+      </div>
+
+      <details class="logbox">
+        <summary data-i18n="live_log">Live log</summary>
+        <div id="renderLog" class="log"></div>
+      </details>
+    </div>
+
+    <div class="dash-card" id="resultCard" hidden>
+      <h3 data-i18n="result">Result</h3>
+      <video id="resultVideo" controls playsinline></video>
+      <div class="row">
+        <a class="btn btn-primary btn-block" id="downloadBtn" href="#" download data-i18n="download">Download</a>
+      </div>
+      <h4 class="sub" data-i18n="quick_export">Quick re-export</h4>
+      <div class="row">
+        <label class="field"><span data-i18n="aspect">Aspect</span><select id="expAspect"></select></label>
+        <label class="field"><span data-i18n="resolution">Resolution</span><select id="expRes"></select></label>
+        <label class="field"><span data-i18n="fit_mode">Fit</span>
+          <select id="expFit">
+            <option value="crop" data-i18n="fit_crop">Crop (fill frame)</option>
+            <option value="pad" data-i18n="fit_pad">Pad (black bars)</option>
+          </select>
+        </label>
+        <button class="btn btn-ghost" id="exportBtn" type="button" data-i18n="export">Export</button>
+      </div>
+      <div id="exportList" class="mini-list"></div>
+    </div>
+      </aside>
+    </main>
+  </section> <!-- END #panelWorkflow -->
+
+  <!-- VIEW 3: INTERACTIVE EDITING PANEL (Timeline Studio) -->
+  <section class="view-panel" id="panelEditor" hidden>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <div>
+        <h2 style="font-size:1.3rem">🎬 <span data-i18n="interactive_editing_panel">Professional Timeline Studio</span></h2>
+        <small class="hint">Multi-track precision visual editing for media, captions, voice, and background music</small>
+      </div>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-ghost btn-sm" id="editorBackToDashBtn" type="button">🏠 Dashboard</button>
+        <button class="btn btn-ghost btn-sm" id="editorBackBtn" type="button">← Back to Steps</button>
+      </div>
+    </div>
+
+    <!-- ===================== INTERACTIVE EDITING PANEL ===================== -->
+    <div id="editingPanel" class="editing-panel">
+      <div class="editor-top-bar">
+        <div class="editor-info">
+          <span class="pill ok" id="editorTimelinePill">0 clips · 0s</span>
+        </div>
+        <div class="editor-controls">
+          <button class="btn btn-ghost btn-sm" id="editorPlayAudioBtn" type="button">▶ <span data-i18n="play_preview">Play Audio</span></button>
+          <button class="btn btn-primary btn-sm" id="editorMatchVoiceBtn" type="button">⚡ <span data-i18n="match_voice">Match to voice</span></button>
+        </div>
+      </div>
+
+      <div class="editor-workspace">
+        <!-- Visual Multi-Track Timeline -->
+        <div class="timeline-box">
+          <div class="timeline-ruler" id="timelineRuler"></div>
+
+          <!-- Track 1: Media Clips -->
+          <div class="track-row" id="trackRowMedia">
+            <div class="track-tag">🎬 <span data-i18n="track_media">Media</span></div>
+            <div class="track-strip" id="stripMedia"></div>
+          </div>
+
+          <!-- Track 2: Subtitle / Captions -->
+          <div class="track-row" id="trackRowCaptions">
+            <div class="track-tag">💬 <span data-i18n="track_captions">Captions</span></div>
+            <div class="track-strip" id="stripCaptions"></div>
+          </div>
+
+          <!-- Track 3: Voice Waveform / Audio -->
+          <div class="track-row" id="trackRowVoice">
+            <div class="track-tag">🎙️ <span data-i18n="track_voice">Voice</span></div>
+            <div class="track-strip" id="stripVoice"></div>
+          </div>
+
+          <!-- Track 4: Music & SFX -->
+          <div class="track-row" id="trackRowMusic">
+            <div class="track-tag">🎵 <span data-i18n="track_music">Music</span></div>
+            <div class="track-strip" id="stripMusic"></div>
+          </div>
+        </div>
+
+        <!-- Selected Clip Inspector / Quick-Editor -->
+        <div class="clip-inspector" id="clipInspector" hidden>
+          <div class="inspector-head">
+            <h4 id="inspTitle">Clip Inspector</h4>
+            <button class="icon-btn" id="inspClose" type="button">✕</button>
+          </div>
+          <div class="inspector-body">
+            <div class="insp-preview" id="inspPreview"></div>
+            <div class="row">
+              <label class="field grow">
+                <span>Start Time (s)</span>
+                <input type="number" id="inspStart" step="0.1" min="0">
+              </label>
+              <label class="field grow">
+                <span>End Time (s)</span>
+                <input type="number" id="inspEnd" step="0.1" min="0">
+              </label>
+            </div>
+            <label class="field">
+              <span>Caption Text</span>
+              <textarea id="inspText" rows="2"></textarea>
+            </label>
+            <label class="field">
+              <span>Effect</span>
+              <select id="inspEffect"></select>
+            </label>
+            <button class="btn btn-primary btn-block" id="inspSaveBtn" type="button">Save Clip</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section> <!-- END #panelEditor -->
+
+  <!-- VIEW 4: MY PROJECTS LIBRARY PANEL -->
+  <section class="view-panel" id="panelProjects" hidden>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+      <div>
+        <h2 style="font-size:1.3rem">📁 <span data-i18n="projects">Projects Library</span></h2>
+        <small class="hint">Saved project sessions and drafts</small>
+      </div>
+      <button class="btn btn-primary btn-sm" id="btnProjectsNewProject" type="button">➕ New Project</button>
+    </div>
+
+    <div class="admin-card" style="margin-bottom:1.2rem">
+      <div class="row">
+        <label class="field grow">
+          <span data-i18n="project_name">Current Project Name</span>
+          <input type="text" id="projectInputName" placeholder="Untitled Project">
+        </label>
+        <button class="btn btn-primary" id="btnDirectSaveProject" type="button" data-i18n="save" style="margin-top:1.5rem">Save Project</button>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h4>Saved Projects on Disk</h4>
+      <div id="fullProjectList" class="mini-list" style="margin-top:0.8rem"></div>
+    </div>
+  </section> <!-- END #panelProjects -->
+
+  </div> <!-- END #mainContent -->
+</div> <!-- END #appShell -->
+
+<!-- ===================== CREATE NEW PROJECT MODAL ===================== -->
+<div class="modal" id="newProjectModal" hidden>
+  <div class="modal-box create-project-dialog">
+    <header class="modal-head">
+      <h3>➕ Create New Video Project</h3>
+      <button class="icon-btn" id="newProjectClose" type="button">✕</button>
+    </header>
+    <div style="display:flex;flex-direction:column;gap:1.1rem;margin-top:0.8rem">
+      <label class="field">
+        <span>Project Name</span>
+        <input type="text" id="createProjectTitle" placeholder="e.g. My Viral TikTok #1" value="Untitled Video">
+      </label>
+
+      <label class="field">
+        <span>Aspect Ratio / Target Format</span>
+        <div class="format-grid">
+          <div class="format-card is-active" id="fmtVertical" data-aspect="9:16">
+            <span class="format-icon">📱</span>
+            <span class="format-name">9:16 Vertical</span>
+            <span class="format-desc">Shorts / Reels / TikTok</span>
+          </div>
+          <div class="format-card" id="fmtLandscape" data-aspect="16:9">
+            <span class="format-icon">🖥️</span>
+            <span class="format-name">16:9 Landscape</span>
+            <span class="format-desc">YouTube / Full HD</span>
+          </div>
+          <div class="format-card" id="fmtSquare" data-aspect="1:1">
+            <span class="format-icon">🟦</span>
+            <span class="format-name">1:1 Square</span>
+            <span class="format-desc">Social Post</span>
+          </div>
+        </div>
+      </label>
+
+      <div class="row">
+        <label class="field grow">
+          <span>Resolution</span>
+          <select id="createProjectRes">
+            <option value="1080p" selected>1080p Full HD (Crisp)</option>
+            <option value="720p">720p (Fast Render)</option>
+          </select>
+        </label>
+        <label class="field grow">
+          <span>FPS</span>
+          <select id="createProjectFps">
+            <option value="30" selected>30 FPS (Standard)</option>
+            <option value="60">60 FPS (Ultra Smooth)</option>
+          </select>
+        </label>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="btnLaunchStudio" type="button" style="padding:0.8rem;margin-top:0.3rem">
+        🚀 Launch Studio & Upload Assets
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODULAR ADDITIONS & DIAGNOSTICS DRAWER ===================== -->
+<div class="drawer" id="adminSidebar" hidden>
+  <div class="drawer-overlay" id="adminSidebarOverlay"></div>
+  <div class="drawer-content">
+    <header class="drawer-head">
+      <div>
+        <h3>⚙️ <span data-i18n="admin_panel_title">Control Center & Diagnostics</span></h3>
+        <small class="owner-tag">👑 Owner: <strong>Hafiz Muhammad Umar</strong></small>
+      </div>
+      <button class="icon-btn" id="adminSidebarClose" type="button">✕</button>
+    </header>
+
+    <div class="drawer-tabs">
+      <button class="tab is-active" id="tabAdditions" type="button">📦 Additions & Modules</button>
+      <button class="tab" id="tabDiagnostics" type="button">🩺 Error Inspector & Fixes</button>
+    </div>
+
+    <!-- TAB 1: ADDITIONS & MODULES -->
+    <div class="drawer-pane is-active" id="paneAdditions">
+      <!-- Owner Tool Branding & Name Section -->
+      <div class="admin-card" id="ownerLogoCard">
+        <h4>🎨 Tool Branding & Name (Owner Only)</h4>
+        <p class="hint">Tool ka custom logo aur display name tabdeel karein:</p>
+
+        <label class="field" style="margin-top:0.6rem">
+          <span>Tool Display Name</span>
+          <div class="row">
+            <input type="text" id="adminToolNameInput" placeholder="e.g. Umar AI Video Studio" value="Umar AI Video Studio">
+            <button class="btn btn-primary btn-sm" id="btnAdminSaveToolName" type="button">Save Name</button>
+          </div>
+        </label>
+
+        <div style="margin-top:0.8rem">
+          <span>Tool Logo Image</span>
+          <div class="logo-preview-box">
+            <img id="adminLogoPreviewImg" class="admin-logo-preview" alt="Preview" style="display:none">
+            <span id="adminLogoFallback" class="logo" style="width:48px;height:48px;font-size:1.2rem">🎬</span>
+          </div>
+          <div class="row" style="margin-top:0.6rem">
+            <input type="file" id="adminLogoFileInput" accept="image/*" class="mini-input">
+            <button class="btn btn-primary btn-sm" id="btnAdminSaveLogo" type="button">Upload Logo</button>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Feature Toggles -->
+      <div class="admin-card">
+        <h4>⚡ Modular Feature Toggles</h4>
+        <div class="toggle-list">
+          <label class="toggle-item"><input type="checkbox" id="modAutoSFX" checked> <span>Auto Transition SFX (Whoosh)</span></label>
+          <label class="toggle-item"><input type="checkbox" id="modKenBurns" checked> <span>Dynamic Zoom & Pan on Images</span></label>
+          <label class="toggle-item"><input type="checkbox" id="modCaptions" checked> <span>Auto Caption Burning</span></label>
+          <label class="toggle-item"><input type="checkbox" id="modBlurredBg" checked> <span>Auto Blurred Background (Landscape media)</span></label>
+          <label class="toggle-item"><input type="checkbox" id="modSmartTriggers" checked> <span>Smart Sticker Word Triggers</span></label>
+        </div>
+      </div>
+
+      <!-- 1-Click Style Presets -->
+      <div class="admin-card">
+        <h4>✨ 1-Click Style Presets</h4>
+        <p class="hint">Ek click se poori video ka editing style badlein:</p>
+        <div class="preset-buttons">
+          <button class="btn btn-ghost btn-sm preset-pill" data-preset="hormozi" type="button">🔥 Alex Hormozi Style</button>
+          <button class="btn btn-ghost btn-sm preset-pill" data-preset="documentary" type="button">📜 Vox Documentary</button>
+          <button class="btn btn-ghost btn-sm preset-pill" data-preset="cashcow" type="button">💰 Cashcow Faceless</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: SELF-HEALING DIAGNOSTICS & 1-CLICK FIXES -->
+    <div class="drawer-pane" id="paneDiagnostics" hidden>
+      <!-- Real-time Health Monitor -->
+      <div class="admin-card">
+        <div class="card-head-simple">
+          <h4>🖥️ System Health Monitor</h4>
+          <button class="btn btn-ghost btn-sm" id="btnRefreshDiagnostics" type="button">🔄 Refresh</button>
+        </div>
+        <div class="diag-metrics">
+          <div class="metric"><span class="m-lbl">FFmpeg:</span> <strong id="diagMetricFfmpeg" class="ok">Detecting…</strong></div>
+          <div class="metric"><span class="m-lbl">GPU NVENC:</span> <strong id="diagMetricNvenc">Detecting…</strong></div>
+          <div class="metric"><span class="m-lbl">Free Disk:</span> <strong id="diagMetricDisk">…</strong></div>
+          <div class="metric"><span class="m-lbl">Temp Cache:</span> <strong id="diagMetricCache">…</strong></div>
+        </div>
+      </div>
+
+      <!-- 1-Click Direct Error Repairs -->
+      <div class="admin-card">
+        <h4>🛠️ 1-Click Direct Error Repairs</h4>
+        <p class="hint">Kisi error ke waqt poora tool chhedne ke bajaye seedha yahan se direct fix karein:</p>
+        <div class="repair-actions">
+          <button class="btn btn-ghost btn-sm repair-btn" id="btnQuickFixSync" type="button">
+            <strong>⚡ Sync Timeline to Voice</strong>
+            <small>Internal pauses close karke duration exact match karein</small>
+          </button>
+          <button class="btn btn-ghost btn-sm repair-btn" id="btnQuickFixCache" type="button">
+            <strong>🧹 Clean Temp Files & Cache</strong>
+            <small>Disk se uncompleted render files delete karke space banayein</small>
+          </button>
+          <button class="btn btn-ghost btn-sm repair-btn" id="btnQuickFixMedia" type="button">
+            <strong>🔍 Re-validate All Media</strong>
+            <small>Aspect ratio, fps aur durations dobara probe karein</small>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Error Console -->
+      <div class="admin-card">
+        <h4>📜 Live Diagnostics & Error Console</h4>
+        <div class="console-box" id="diagConsoleLog">System ready. No critical errors.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== USER AUTHENTICATION MODAL ===================== -->
+<div class="modal" id="authModal" hidden>
+  <div class="modal-box auth-dialog">
+    <header class="modal-head">
+      <h3 id="authModalHeading">Sign In to Your Account</h3>
+      <button class="icon-btn" id="authModalClose" type="button">✕</button>
+    </header>
+
+    <div class="tabs" style="margin-bottom:1rem">
+      <button class="tab is-active" id="authTabSignIn" type="button">Sign In</button>
+      <button class="tab" id="authTabSignUp" type="button">Create Account (Sign Up)</button>
+    </div>
+
+    <!-- Sign In Form -->
+    <form id="authFormSignIn">
+      <label class="field">
+        <span>Email Address</span>
+        <input type="email" id="loginEmail" placeholder="yourname@domain.com" required>
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input type="password" id="loginPassword" placeholder="••••••••" required>
+      </label>
+      <button class="btn btn-primary btn-block" type="submit" style="margin-top:0.8rem">Sign In</button>
+      <p class="hint" style="text-align:center;margin-top:0.6rem">
+        👑 Owner: <strong>Hafiz Muhammad Umar</strong> (<code>umar@videobot.com</code>)
+      </p>
+    </form>
+
+    <!-- Sign Up Form (For New Users) -->
+    <form id="authFormSignUp" hidden>
+      <label class="field">
+        <span>Your Full Name</span>
+        <input type="text" id="signupName" placeholder="e.g. Ali Khan" required>
+      </label>
+      <label class="field">
+        <span>Email Address</span>
+        <input type="email" id="signupEmail" placeholder="ali@example.com" required>
+      </label>
+      <label class="field">
+        <span>Create Password</span>
+        <input type="password" id="signupPassword" placeholder="••••••••" required minlength="4">
+      </label>
+      <button class="btn btn-primary btn-block" type="submit" style="margin-top:0.8rem">Create Account & Sign In</button>
+      <p class="hint" style="margin-top:0.6rem">
+        Aapka apna account create ho jayega jahan aapka name display hoga.
+      </p>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== PROJECT DRAWER ===================== -->
+<div class="modal" id="projectModal" hidden>
+  <div class="modal-box">
+    <header class="modal-head">
+      <h3 data-i18n="projects">Projects</h3>
+      <button class="icon-btn" id="projectClose" type="button">✕</button>
+    </header>
+    <div class="row">
+      <label class="field grow"><span data-i18n="project_name">Project name</span><input type="text" id="projectName"></label>
+      <button class="btn btn-primary" id="projectSave" type="button" data-i18n="save">Save</button>
+    </div>
+    <div id="projectList" class="mini-list"></div>
+  </div>
+</div>
+
+<div id="toasts" class="toasts"></div>
+
+<script src="i18n.js?v=25"></script>
+<script src="app.js?v=25"></script>
+</body>
+</html>
