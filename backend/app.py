@@ -69,6 +69,10 @@ app.mount("/files", StaticFiles(directory=UPLOAD_DIR), name="files")
 if os.path.isdir(FRONTEND_DIR):
     app.mount("/app", StaticFiles(directory=FRONTEND_DIR, html=True), name="app")
 
+@app.get("/")
+def root():
+    return RedirectResponse(url="/app/")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],   # local tool hai — sab allow
