@@ -731,15 +731,46 @@ async function pasteSceneMap() {
 /* ---------------------------- media ---------------------------- */
 async function uploadMedia(files) {
   if (!files || !files.length) return;
-  const fd = new FormData();
-  Array.from(files).forEach((f) => fd.append("files", f));
-  try {
-    const res = await fpost("/media/manual/" + S.sid, fd);
-    S.media = res.all_manual_media || [];
-    if (res.segments && res.segments.length) S.segments = res.segments;
-    renderSegments();
-    toast(T.t("msg_auto_assigned") + " " + (res.auto_assigned_count || 0), "ok");
-  } catch (err) { toast(err.message, "err"); }
+  const fileList = Array.from(files);
+  const total = fileList.length;
+  
+  toast(`Starting upload of ${total} file(s)...`, "ok");
+  let autoAssignedTotal = 0;
+  
+  // Group files into small batches (< 25 MB per batch) to avoid Cloudflare 100MB tunnel limit & timeout
+  let currentBatch = [];
+  let currentBatchSize = 0;
+  const batches = [];
+  
+  for (const f of fileList) {
+    if (currentBatch.length > 0 && (currentBatchSize + f.size > 25 * 1024 * 1024 || currentBatch.length >= 5)) {
+      batches.push(currentBatch);
+      currentBatch = [];
+      currentBatchSize = 0;
+    }
+    currentBatch.push(f);
+    currentBatchSize += f.size;
+  }
+  if (currentBatch.length > 0) batches.push(currentBatch);
+
+  let processedCount = 0;
+  for (let b = 0; b < batches.length; b++) {
+    const batch = batches[b];
+    const fd = new FormData();
+    batch.forEach((f) => fd.append("files", f));
+    processedCount += batch.length;
+    toast(`Uploading files (${processedCount}/${total})...`, "warn");
+    try {
+      const res = await fpost("/media/manual/" + S.sid, fd);
+      S.media = res.all_manual_media || [];
+      if (res.segments && res.segments.length) S.segments = res.segments;
+      autoAssignedTotal += (res.auto_assigned_count || 0);
+      renderSegments();
+    } catch (err) {
+      toast(`Upload error on batch ${b + 1}: ${err.message}`, "err");
+    }
+  }
+  toast((T.t("msg_auto_assigned") || "Auto-assigned") + " " + autoAssignedTotal + " media file(s)", "ok");
 }
 
 async function importZip(file) {
