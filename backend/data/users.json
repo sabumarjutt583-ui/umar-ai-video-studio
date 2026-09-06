@@ -16,5 +16,14 @@
     "salt": "79cef18c97d442a8",
     "role": "owner",
     "created_at": 1788681658.7782614
+  },
+  {
+    "id": "creator_ddf2fd",
+    "name": "Hafiz Muhammad Umar",
+    "email": "e0004ca8@creator.local",
+    "password_hash": "3098e2d5c188e0563a5c92e8caed7ef100d8b611991509d76d80d7ecd3182458",
+    "salt": "deae958c3ee34127",
+    "role": "user",
+    "created_at": 1788684185.5831413
   }
 ]

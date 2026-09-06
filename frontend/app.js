@@ -1730,6 +1730,450 @@ async function handleSaveToolName() {
   }
 }
 
+/* ==========================================================================
+   AI VOICE STUDIO (Edge-TTS, Emotion Tags & Timeline Sync)
+   ========================================================================== */
+let voiceStudioState = {
+  initialized: false,
+  voices: [],
+  selectedVoice: null,
+  activeEngine: "edge-tts",
+  lastGenerated: null,
+  history: []
+};
+
+async function initVoiceStudio() {
+  if (voiceStudioState.initialized) return;
+  voiceStudioState.initialized = true;
+
+  // 1. Fetch voices
+  try {
+    const data = await jget("/tts/voices");
+    if (data) {
+      voiceStudioState.voices = data.featured || [];
+      renderVoiceSelectDropdown(data.featured || [], data.all_voices || []);
+    }
+  } catch (err) {
+    console.warn("Could not load voices from backend:", err);
+  }
+
+  // 2. Textarea listener
+  const textarea = $("ttsScriptTextarea");
+  if (textarea) {
+    textarea.addEventListener("input", updateScriptCharCount);
+  }
+
+  // 3. Emotion tags buttons (inserts tag at cursor!)
+  const emotionBtns = $$(".emotion-tag-btn");
+  emotionBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      insertTagAtScriptCursor(btn.dataset.tag);
+    });
+  });
+
+  // 4. Scenario template chips
+  const scenarioChips = $$(".scenario-chip");
+  scenarioChips.forEach(chip => {
+    chip.addEventListener("click", () => {
+      loadScenarioTemplate(chip.dataset.scenario);
+    });
+  });
+
+  // 5. Sliders
+  setupSliderDisplay("sliderTtsSpeed", "valTtsSpeed", (v) => Number(v).toFixed(2) + "x");
+  setupSliderDisplay("sliderTtsPitch", "valTtsPitch", (v) => (Number(v) >= 0 ? "+" : "") + v + " Hz");
+  setupSliderDisplay("sliderTtsExpress", "valTtsExpress", (v) => v + "%");
+  setupSliderDisplay("sliderTtsVolume", "valTtsVolume", (v) => (Number(v) >= 0 ? "+" : "") + v + " dB");
+
+  // 6. Voice select dropdown
+  const voiceSelect = $("ttsVoiceSelect");
+  if (voiceSelect) {
+    voiceSelect.addEventListener("change", () => {
+      updateSelectedVoiceCard(voiceSelect.value);
+    });
+  }
+
+  // 7. Preview audio
+  on("btnPreviewVoiceAudio", "click", playVoicePreviewAudio);
+
+  // 8. Generate & Send to timeline
+  on("btnTtsGenerate", "click", handleGenerateTTS);
+  on("btnTtsSendToTimeline", "click", handleSendTtsToTimeline);
+
+  // 9. Clear script
+  on("btnTtsClearScript", "click", () => {
+    if (textarea) {
+      textarea.value = "";
+      updateScriptCharCount();
+    }
+  });
+
+  // 10. Inspector tabs
+  on("tabVoiceSettings", "click", () => switchVoiceInspectorTab("settings"));
+  on("tabVoiceHistory", "click", () => switchVoiceInspectorTab("history"));
+  on("btnTtsClearHistory", "click", clearVoiceHistory);
+
+  // 11. Engine switching
+  on("btnEngineEdgeTTS", "click", () => switchVoiceEngine("edge-tts"));
+  on("btnEngineCloning", "click", () => switchVoiceEngine("cloning"));
+  on("btnEngineElevenLabs", "click", () => switchVoiceEngine("eleven-labs"));
+
+  // 12. Voice cloning upload
+  wireDrop(dropZoneOf("cloneAudioInput"), "cloneAudioInput", handleUploadCloneSample);
+}
+
+function setupSliderDisplay(sliderId, labelId, formatFn) {
+  const slider = $(sliderId);
+  const label = $(labelId);
+  if (!slider || !label) return;
+  slider.addEventListener("input", () => {
+    label.textContent = formatFn ? formatFn(slider.value) : slider.value;
+  });
+}
+
+function insertTagAtScriptCursor(tag) {
+  const textarea = $("ttsScriptTextarea");
+  if (!textarea) return;
+  const start = textarea.selectionStart ?? textarea.value.length;
+  const end = textarea.selectionEnd ?? textarea.value.length;
+  const val = textarea.value;
+
+  const before = val.substring(0, start);
+  const after = val.substring(end);
+  const needsSpaceBefore = before.length > 0 && !before.endsWith(" ") && !before.endsWith("\n");
+  const needsSpaceAfter = after.length > 0 && !after.startsWith(" ") && !after.startsWith("\n");
+
+  const insertion = (needsSpaceBefore ? " " : "") + tag + (needsSpaceAfter ? " " : " ");
+  textarea.value = before + insertion + after;
+  textarea.focus();
+  const newCursor = start + insertion.length;
+  textarea.setSelectionRange(newCursor, newCursor);
+  updateScriptCharCount();
+  toast("Inserted emotion tag: " + tag, "ok");
+}
+
+function loadScenarioTemplate(scenarioId) {
+  const textarea = $("ttsScriptTextarea");
+  if (!textarea) return;
+  const templates = {
+    youtube_intro: "What if I told you that everything you knew about artificial intelligence was about to change? [pause: 1s] In this video, we uncover the shocking truth [excited] that nobody is talking about. Make sure to watch until the very end!",
+    story_narration: "The clock struck midnight. [pause: 1s] Outside the window, the wind began to howl softly. [whisper] He reached for the ancient leather diary, his hands trembling slightly. [sigh] Some secrets were never meant to be discovered.",
+    faceless_tiktok: "Stop scrolling right now! [excited] Here are three psychological tricks that will make anyone respect you instantly. [pause: 500ms] Number one will completely surprise you.",
+    islamic_bayan: "زندگی میں سب سے قیمتی چیز وقت اور دل کا سکون ہے۔ [pause: 1s] جب انسان اللہ پر توکل کرتا ہے تو اس کے دل کو وہ اطمینان ملتا ہے جو دنیا کی کوئی دولت نہیں دے سکتی۔",
+    product_demo: "Say goodbye to hours of tedious video editing. [excited] With our automated AI studio, create studio-quality videos in seconds, not hours. [clear throat] Let's dive right into the demo.",
+    motivational: "Every champion was once a contender that refused to give up. [pause: 1s] When the road gets dark and everyone doubts you, [excited] that is the exact moment you push forward!"
+  };
+  if (templates[scenarioId]) {
+    textarea.value = templates[scenarioId];
+    updateScriptCharCount();
+    toast("Loaded scenario template! ✨", "ok");
+  }
+}
+
+function updateScriptCharCount() {
+  const textarea = $("ttsScriptTextarea");
+  const countEl = $("ttsCharCount");
+  if (textarea && countEl) {
+    const len = textarea.value.length;
+    countEl.textContent = len.toLocaleString();
+    if (len > 20000) countEl.style.color = "var(--err, #ef4444)";
+    else countEl.style.color = "var(--text-dim)";
+  }
+}
+
+function renderVoiceSelectDropdown(featured, allVoices) {
+  const sel = $("ttsVoiceSelect");
+  if (!sel) return;
+  clear(sel);
+
+  const optGroupFeatured = el("optgroup", { attrs: { label: "⭐ Featured Neural Voices (Urdu, English, Hindi, Arabic)" } });
+  featured.forEach(v => {
+    const opt = el("option", {
+      attrs: { value: v.id },
+      text: `${v.flag || "🎙️"} ${v.name} (${v.language} - ${v.gender})`
+    });
+    optGroupFeatured.appendChild(opt);
+  });
+  sel.appendChild(optGroupFeatured);
+
+  const featuredIds = new Set(featured.map(f => f.id));
+  const remaining = (allVoices || []).filter(v => !featuredIds.has(v.id));
+  if (remaining.length > 0) {
+    const optGroupAll = el("optgroup", { attrs: { label: `🌐 All Available Voices (${remaining.length} more)` } });
+    remaining.slice(0, 100).forEach(v => {
+      const opt = el("option", {
+        attrs: { value: v.id },
+        text: `${v.name || v.id} [${v.locale || ""}] - ${v.gender || ""}`
+      });
+      optGroupAll.appendChild(opt);
+    });
+    sel.appendChild(optGroupAll);
+  }
+
+  sel.value = "ur-PK-AsadNeural";
+  updateSelectedVoiceCard("ur-PK-AsadNeural");
+}
+
+function updateSelectedVoiceCard(voiceId) {
+  const v = (voiceStudioState.voices || []).find(x => x.id === voiceId) || {
+    id: voiceId, name: voiceId, flag: "🎙️", category: "Neural Voice", language: "Multilingual", gender: "Neural"
+  };
+  voiceStudioState.selectedVoice = v;
+
+  const flagEl = $("vpcFlag");
+  const nameEl = $("vpcName");
+  const catEl = $("vpcCategory");
+
+  if (flagEl) flagEl.textContent = v.flag || "🎙️";
+  if (nameEl) nameEl.textContent = v.name || voiceId;
+  if (catEl) catEl.textContent = `${v.language || ""} • ${v.gender || ""} • ${v.category || ""}`;
+}
+
+async function playVoicePreviewAudio() {
+  const v = voiceStudioState.selectedVoice;
+  if (!v) return;
+  const sampleText = v.sample || "This is a high quality AI neural voice preview.";
+  try {
+    toast("Generating voice preview...", "ok");
+    const res = await jpost("/tts/generate", {
+      text: sampleText,
+      voice: v.id,
+      speed: 1.0,
+      pitch: 0
+    });
+    if (res && res.audio_url) {
+      const audio = new Audio(res.audio_url);
+      audio.play();
+    }
+  } catch (err) {
+    toast("Preview error: " + err.message, "err");
+  }
+}
+
+async function handleGenerateTTS() {
+  const textarea = $("ttsScriptTextarea");
+  const text = (textarea ? textarea.value : "").trim();
+  if (!text) {
+    toast("Pehle script likhein ya koi template select karein.", "warn");
+    return;
+  }
+
+  const voice = ($("ttsVoiceSelect") || {}).value || "ur-PK-AsadNeural";
+  const speed = parseFloat(($("sliderTtsSpeed") || {}).value) || 1.0;
+  const pitch = parseInt(($("sliderTtsPitch") || {}).value, 10) || 0;
+
+  const btnIcon = $("ttsBtnIcon");
+  const btnText = $("ttsBtnText");
+  const generateBtn = $("btnTtsGenerate");
+
+  if (generateBtn) generateBtn.disabled = true;
+  if (btnIcon) btnIcon.textContent = "⏳";
+  if (btnText) btnText.textContent = "Synthesizing...";
+
+  try {
+    const res = await jpost("/tts/generate", {
+      text,
+      voice,
+      speed,
+      pitch,
+      session_id: S.sid || null
+    });
+
+    toast("Voice synthesized successfully! 🎉", "ok");
+    voiceStudioState.lastGenerated = res;
+
+    // Display result card
+    const resCard = $("ttsResultCard");
+    if (resCard) resCard.hidden = false;
+
+    // Audio player
+    const player = $("ttsAudioPlayer");
+    if (player && res.audio_url) {
+      player.src = res.audio_url;
+      player.load();
+      player.play().catch(() => {});
+    }
+
+    // Meta & download links
+    const metaEl = $("ttsResultMeta");
+    if (metaEl) metaEl.textContent = `Duration: ${res.duration.toFixed(1)}s • ${res.word_count} words generated with word-level timestamps`;
+
+    const dlAudio = $("ttsDownloadAudioLink");
+    if (dlAudio && res.audio_url) {
+      dlAudio.href = res.audio_url;
+      dlAudio.setAttribute("download", res.audio_filename || "ai_voice.mp3");
+    }
+
+    const dlSrt = $("ttsDownloadSrtLink");
+    if (dlSrt && res.srt_filename && S.sid) {
+      dlSrt.href = API + "/files/" + S.sid + "/tts/" + res.srt_filename;
+    }
+
+    // Word timestamp cloud
+    const countSpan = $("ttsWordsCount");
+    if (countSpan) countSpan.textContent = res.word_count;
+    const wordsCloud = $("ttsWordsCloud");
+    if (wordsCloud) {
+      clear(wordsCloud);
+      (res.words || []).slice(0, 150).forEach(w => {
+        const pill = el("span", {
+          cls: "tts-word-pill",
+          text: `${w.word} (${w.start}s)`
+        });
+        wordsCloud.appendChild(pill);
+      });
+      if ((res.words || []).length > 150) {
+        wordsCloud.appendChild(el("span", { cls: "hint", text: `... and ${res.words.length - 150} more words` }));
+      }
+    }
+
+    // Add to History
+    addVoiceHistoryItem({
+      voice,
+      text: text.substring(0, 60) + (text.length > 60 ? "..." : ""),
+      duration: res.duration,
+      audio_url: res.audio_url,
+      audio_path: res.audio_path,
+      srt_path: res.srt_path,
+      timestamp: new Date().toLocaleTimeString()
+    });
+
+  } catch (err) {
+    toast(err.message || "TTS Generation Failed", "err");
+  } finally {
+    if (generateBtn) generateBtn.disabled = false;
+    if (btnIcon) btnIcon.textContent = "✨";
+    if (btnText) btnText.textContent = "Generate Speech";
+  }
+}
+
+async function handleSendTtsToTimeline() {
+  const gen = voiceStudioState.lastGenerated;
+  if (!gen || !gen.audio_path) {
+    toast("Pehle voice generate karein.", "warn");
+    return;
+  }
+
+  // Ensure an active session exists
+  if (!S.sid) {
+    await createSession();
+  }
+
+  try {
+    const res = await jpost("/tts/send-to-project/" + S.sid, {
+      audio_path: gen.audio_path,
+      srt_path: gen.srt_path || null
+    });
+
+    toast(res.message || "AI Voice & Timestamps sent to Video Studio Timeline! 🎬", "ok");
+    
+    // Refresh session state so timeline & workflow update immediately
+    const state = await jget("/session/" + S.sid + "/state");
+    if (state) {
+      applySessionState(state);
+    }
+    
+    // Switch to editing timeline panel
+    switchView("editor");
+  } catch (err) {
+    toast(err.message, "err");
+  }
+}
+
+function switchVoiceInspectorTab(tab) {
+  const isSettings = tab === "settings";
+  $("tabVoiceSettings").classList.toggle("is-active", isSettings);
+  $("tabVoiceHistory").classList.toggle("is-active", !isSettings);
+  $("paneVoiceSettings").hidden = !isSettings;
+  $("paneVoiceHistory").hidden = isSettings;
+}
+
+function switchVoiceEngine(engine) {
+  voiceStudioState.activeEngine = engine;
+  $("btnEngineEdgeTTS").classList.toggle("is-active", engine === "edge-tts");
+  $("btnEngineCloning").classList.toggle("is-active", engine === "cloning");
+  $("btnEngineElevenLabs").classList.toggle("is-active", engine === "eleven-labs");
+
+  const cloneBox = $("voiceCloneBox");
+  if (cloneBox) cloneBox.hidden = (engine !== "cloning");
+
+  const elevenBox = $("elevenKeyBox");
+  if (elevenBox) elevenBox.hidden = (engine !== "eleven-labs");
+}
+
+async function handleUploadCloneSample(file) {
+  if (!file) return;
+  if (!S.sid) await createSession();
+
+  const fd = new FormData();
+  fd.append("file", file);
+
+  try {
+    const res = await fpost("/tts/clone-sample/" + S.sid, fd);
+    toast((res && res.message) || "Voice sample uploaded for cloning! 🧬", "ok");
+    const status = $("cloneSampleStatus");
+    if (status) {
+      status.textContent = `${file.name} (${res.duration}s) - Ready to clone`;
+      status.style.color = "#34d399";
+    }
+  } catch (err) {
+    toast(err.message, "err");
+  }
+}
+
+function addVoiceHistoryItem(item) {
+  voiceStudioState.history.unshift(item);
+  renderVoiceHistory();
+}
+
+function clearVoiceHistory() {
+  voiceStudioState.history = [];
+  renderVoiceHistory();
+}
+
+function renderVoiceHistory() {
+  const list = $("ttsHistoryList");
+  if (!list) return;
+  clear(list);
+
+  if (!voiceStudioState.history.length) {
+    list.appendChild(el("p", {
+      cls: "hint",
+      style: { textAlign: "center", padding: "1.5rem 0" },
+      text: "No audio generated in this session yet."
+    }));
+    return;
+  }
+
+  voiceStudioState.history.forEach((h, idx) => {
+    const card = el("div", { cls: "tts-history-item" }, [
+      el("div", { cls: "thi-head" }, [
+        el("strong", { text: h.voice }),
+        el("small", { cls: "hint", text: `${h.duration.toFixed(1)}s • ${h.timestamp}` })
+      ]),
+      el("div", { cls: "thi-text", text: h.text }),
+      el("div", { cls: "thi-actions" }, [
+        el("button", {
+          cls: "btn btn-ghost btn-sm",
+          text: "▶ Play",
+          on: { click: () => { new Audio(h.audio_url).play(); } }
+        }),
+        el("button", {
+          cls: "btn btn-primary btn-sm",
+          text: "🎬 Use in Timeline",
+          on: {
+            click: async () => {
+              voiceStudioState.lastGenerated = h;
+              await handleSendTtsToTimeline();
+            }
+          }
+        })
+      ])
+    ]);
+    list.appendChild(card);
+  });
+}
+
 /* ---------------------------- View & Panel Switching ---------------------------- */
 function switchView(view) {
   S.activeView = view;
@@ -1738,18 +2182,21 @@ function switchView(view) {
     workflow: $("panelWorkflow"),
     editor: $("panelEditor"),
     projects: $("panelProjects"),
+    voiceStudio: $("panelVoiceStudio"),
   };
   const navs = {
     welcome: $("navItemWelcome"),
     workflow: $("navItemWorkflow"),
     editor: $("navItemEditor"),
     projects: $("navItemProjects"),
+    voiceStudio: $("navItemVoiceStudio"),
   };
   const titles = {
     welcome: "🏠 Dashboard & Studio Overview",
     workflow: "🎛️ Video Creation Studio (Step-by-Step)",
     editor: "🎬 Professional Interactive Timeline Studio",
     projects: "📁 Projects Library & Saved Drafts",
+    voiceStudio: "🎙️ AI Voice Studio (Edge-TTS, Emotions & Cloning)",
   };
 
   Object.entries(panels).forEach(([k, p]) => {
@@ -1766,8 +2213,11 @@ function switchView(view) {
     renderEditingPanel();
   } else if (view === "projects") {
     loadProjectsFullList();
+  } else if (view === "voiceStudio") {
+    initVoiceStudio();
   }
 }
+
 
 /* ---------------------------- New Project Wizard Modal ---------------------------- */
 let selectedProjectAspect = "9:16";
@@ -2160,6 +2610,7 @@ function wireEvents() {
   on("navItemNewProject", "click", openNewProjectModal);
   on("navItemWorkflow", "click", () => switchView("workflow"));
   on("navItemEditor", "click", () => switchView("editor"));
+  on("navItemVoiceStudio", "click", () => switchView("voiceStudio"));
   on("navItemProjects", "click", () => switchView("projects"));
   on("navItemAdmin", "click", openAdminSidebar);
   on("sidebarBtnLogout", "click", handleLogout);
@@ -2167,6 +2618,9 @@ function wireEvents() {
   /* Welcome Dashboard Action Card buttons */
   on("welcomeBtnNewProject", "click", openNewProjectModal);
   on("welcomeBtnTimeline", "click", () => switchView("editor"));
+  on("welcomeBtnVoiceStudio", "click", () => switchView("voiceStudio"));
+  on("btnStepOpenVoiceStudio", "click", () => switchView("voiceStudio"));
+  on("btnVoiceStudioToTimeline", "click", () => switchView("editor"));
   on("welcomeBtnPresets", "click", () => { openAdminSidebar(); switchDrawerTab("additions"); });
   on("welcomeBtnProjects", "click", () => switchView("projects"));
   on("welcomeBtnDiagnostics", "click", () => { openAdminSidebar(); switchDrawerTab("diagnostics"); });

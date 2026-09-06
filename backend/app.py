@@ -26,6 +26,8 @@ import uuid
 import shutil
 import threading
 import time
+from typing import Optional
+import tts_engine
 
 from timestamp_parser import (parse_timestamp_file, extract_raw_words,
                               group_words_by_sentences, count_sentences)
@@ -655,6 +657,127 @@ def update_segments(session_id: str, segments: list = Body(..., embed=True)):
         raise HTTPException(status_code=400, detail="Koi valid segment nahi mila.")
     session["segments"] = updated
     return {"status": "ok", "segments": updated, "segment_count": len(updated)}
+
+
+# ----------------------------------------------------------------------------
+# AI Voice Studio & Emotion Tags Engine (Edge-TTS, Voice Cloning & Timeline Sync)
+# ----------------------------------------------------------------------------
+
+@app.get("/tts/voices")
+async def get_tts_voices():
+    """Returns curated featured voices, scenario templates, emotion tags, and all available voices."""
+    featured = tts_engine.FEATURED_VOICES
+    scenarios = tts_engine.SCENARIO_TEMPLATES
+    emotion_tags = tts_engine.EMOTION_TAGS
+    all_voices = await tts_engine.list_all_available_voices()
+    return {
+        "status": "ok",
+        "available": tts_engine.EDGE_TTS_AVAILABLE,
+        "featured": featured,
+        "all_voices": all_voices,
+        "scenarios": scenarios,
+        "emotion_tags": emotion_tags
+    }
+
+
+@app.post("/tts/generate")
+async def generate_tts(request: Request,
+                       text: str = Body(..., embed=True),
+                       voice: str = Body("ur-PK-AsadNeural", embed=True),
+                       speed: float = Body(1.0, embed=True),
+                       pitch: int = Body(0, embed=True),
+                       session_id: Optional[str] = Body(None, embed=True)):
+    """Generates speech via Edge-TTS and returns audio URL + word-level timestamps."""
+    clean = (text or "").strip()
+    if not clean:
+        raise HTTPException(status_code=400, detail="Script text cannot be empty.")
+
+    target_session = session_id if (session_id and session_id in SESSIONS) else None
+    if target_session:
+        out_dir = session_dir(target_session, "tts")
+    else:
+        out_dir = os.path.join(UPLOAD_DIR, "tts_cache")
+    os.makedirs(out_dir, exist_ok=True)
+
+    try:
+        result = await tts_engine.synthesize_speech(
+            text=clean,
+            voice=voice,
+            speed=float(speed or 1.0),
+            pitch=int(pitch or 0),
+            output_dir=out_dir
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"TTS Generation Error: {str(e)}")
+
+    if target_session:
+        audio_url = file_url(request, target_session, "tts", result["audio_filename"])
+    else:
+        audio_url = f"{base_url(request)}/files/tts_cache/{result['audio_filename']}"
+
+    return {
+        "status": "ok",
+        "audio_url": audio_url,
+        "audio_filename": result["audio_filename"],
+        "audio_path": result["audio_path"],
+        "duration": result["duration"],
+        "words": result["words"],
+        "word_count": len(result["words"]),
+        "srt_filename": result["srt_filename"],
+        "srt_path": result["srt_path"],
+        "clean_text": result["clean_text"],
+        "session_id": target_session
+    }
+
+
+@app.post("/tts/send-to-project/{session_id}")
+async def send_tts_to_project(session_id: str,
+                              audio_path: str = Body(..., embed=True),
+                              srt_path: Optional[str] = Body(None, embed=True)):
+    """Transfers generated voiceover and word-level timestamps directly to Video Studio Timeline."""
+    session = get_session(session_id)
+    if not os.path.exists(audio_path):
+        raise HTTPException(status_code=404, detail="Audio file not found on server.")
+
+    duration = probe_duration(audio_path)
+    session["voice_file"] = audio_path
+    session["voice_parts"] = []
+    session["voice_duration"] = duration
+
+    if srt_path and os.path.exists(srt_path):
+        with open(srt_path, "r", encoding="utf-8") as f:
+            raw_text = f.read()
+        _ingest_timestamps(session, os.path.basename(srt_path), raw_text)
+
+    return {
+        "status": "ok",
+        "message": "AI Voice & word timestamps successfully attached to Video Studio Timeline!",
+        "duration": round(duration, 2),
+        "segment_count": len(session.get("segments") or []),
+        "has_voice": True
+    }
+
+
+@app.post("/tts/clone-sample/{session_id}")
+async def upload_clone_sample(session_id: str, file: UploadFile = File(...)):
+    """Uploads a 10-30s audio recording to create a Voice Cloning profile."""
+    session = get_session(session_id)
+    if not is_audio_file(file.filename):
+        raise HTTPException(status_code=400, detail="Audio file (.mp3 / .wav / .m4a) zaroori hai.")
+
+    clone_dir = session_dir(session_id, "voice_clones")
+    sample_path = os.path.join(clone_dir, f"sample_{file.filename}")
+    save_upload(file, sample_path)
+
+    dur = probe_duration(sample_path)
+    return {
+        "status": "ok",
+        "message": f"Voice sample saved: {file.filename}",
+        "sample_path": sample_path,
+        "filename": file.filename,
+        "duration": round(dur, 2)
+    }
+
 
 
 def sync_segments_to_voice(segments: list, voice_duration: float) -> list:
