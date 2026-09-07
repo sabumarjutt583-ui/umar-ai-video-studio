@@ -971,19 +971,19 @@
       <button class="v-subtab" id="subtabCloning" type="button">
         <span class="vst-icon">🧬</span>
         <div class="vst-text">
-          <strong>Voice Cloning Workspace</strong>
-          <small>Upload 10-30s Audio • Mimic Voice</small>
+          <strong>F5-TTS Voice Cloning</strong>
+          <small>Flow-Matching • Upload 5-15s Sample</small>
         </div>
-        <span class="pill" style="font-size:0.65rem;background:#8b5cf6">AI CLONER</span>
+        <span class="pill" style="font-size:0.65rem;background:#8b5cf6">F5-TTS AI</span>
       </button>
 
-      <button class="v-subtab" id="subtabElevenLabs" type="button">
-        <span class="vst-icon">✨</span>
+      <button class="v-subtab" id="subtabKokoro" type="button">
+        <span class="vst-icon">🌟</span>
         <div class="vst-text">
-          <strong>ElevenLabs Workspace</strong>
-          <small>17,020+ Voices • v3 Turbo Expressive</small>
+          <strong>Kokoro-82M Premium Studio</strong>
+          <small>Studio HD Voices • 100% Free</small>
         </div>
-        <span class="pill" style="font-size:0.65rem;border:1px solid rgba(255,255,255,0.2)">PRO (BYOK)</span>
+        <span class="pill ok" style="font-size:0.65rem;background:#10b981;color:#000;font-weight:700">STUDIO HD</span>
       </button>
     </div>
 
@@ -1330,84 +1330,109 @@
       </div>
     </div> <!-- END #pageCloning -->
 
-    <!-- ==================== SUB-PAGE 3: ELEVENLABS PRO WORKSPACE ==================== -->
-    <div class="v-subpage" id="pageElevenLabs" hidden>
+    <!-- ==================== SUB-PAGE 3: KOKORO-82M STUDIO HD ==================== -->
+    <div class="v-subpage" id="pageKokoro" hidden>
       <div class="voice-studio-grid">
 
-        <!-- Left: API Key & Model Selector -->
+        <!-- Left: Kokoro Voices List -->
         <aside class="voice-sidebar">
-          <div class="eleven-key-box">
-            <label class="field">
-              <span style="font-weight:700">ElevenLabs API Key</span>
-              <input type="password" id="inputElevenApiKey" placeholder="sk_..." autocomplete="off">
-            </label>
-            <button class="btn btn-primary btn-sm btn-block" id="btnSaveElevenKey" type="button" style="margin-top:0.4rem">Save Key Locally</button>
-            <small class="hint" style="margin-top:0.3rem;display:block">Key is stored in your private browser session.</small>
+          <div class="voice-clone-box">
+            <div class="card-head-simple" style="margin-bottom:0.5rem">
+              <strong style="font-size:0.85rem">🌟 Kokoro Studio Voices</strong>
+              <span class="pill ok" style="font-size:0.65rem">100% FREE</span>
+            </div>
+            <div class="kokoro-voice-list" id="kokoroVoiceList">
+              <!-- Dynamically populated -->
+            </div>
           </div>
 
           <div class="voice-sidebar-card">
-            <strong>Model Selection</strong>
-            <label class="field" style="margin-top:0.4rem">
-              <select id="elevenModelSelect">
-                <option value="eleven_v3_turbo">Eleven v3 Turbo (Speed + Emotions)</option>
-                <option value="eleven_multilingual_v2">Eleven Multilingual v2</option>
-                <option value="eleven_turbo_v2_5">Eleven Turbo v2.5</option>
-              </select>
-            </label>
-          </div>
-
-          <div class="voice-sidebar-card">
-            <strong>✨ 17,020+ Voices</strong>
+            <strong>✨ ElevenLabs Rival Quality</strong>
             <p class="hint" style="font-size:0.75rem;margin-top:0.3rem">
-              Access the entire public ElevenLabs library including British, American, and international accents.
+              Kokoro-82M is the state-of-the-art open-source audio model. Generates 24,000 Hz CD quality speech with zero robotic artifacts.
+            </p>
+          </div>
+
+          <div class="voice-sidebar-card">
+            <strong>💎 Zero Cost & Unlimited</strong>
+            <p class="hint" style="font-size:0.75rem;margin-top:0.3rem">
+              No API keys, no monthly fees, and no per-character limits. 100% free forever.
             </p>
           </div>
         </aside>
 
         <!-- Center: Script Editor -->
         <main class="voice-canvas">
+          <div class="scenario-bar">
+            <span class="scenario-lbl">Quick Starters:</span>
+            <div class="scenario-chips">
+              <button class="scenario-chip" data-scenario="youtube_intro" type="button">📺 YouTube Hook</button>
+              <button class="scenario-chip" data-scenario="story_narration" type="button">📖 Cinematic Story</button>
+              <button class="scenario-chip" data-scenario="faceless_tiktok" type="button">📱 TikTok / Shorts</button>
+              <button class="scenario-chip" data-scenario="motivational" type="button">🔥 Motivational</button>
+            </div>
+          </div>
+
           <div class="script-editor-box">
-            <textarea id="elevenScriptTextarea" class="script-textarea" placeholder="Write or paste your script for ElevenLabs generation..." rows="12"></textarea>
+            <textarea id="kokoroScriptTextarea" class="script-textarea" placeholder="Type or paste your narration script here for Kokoro-82M Studio HD..." rows="12"></textarea>
             <div class="script-footer">
               <div class="script-char-count">
-                <span id="elevenCharCount">0</span> / 20,000 characters
+                <span id="kokoroCharCount">0</span> / 20,000 characters
               </div>
               <div class="script-actions-row">
-                <button class="btn btn-ghost btn-sm" id="btnElevenClearScript" type="button">Clear</button>
-                <button class="btn btn-primary" id="btnElevenGenerate" type="button">
-                  <span>✨</span> Generate with ElevenLabs
+                <button class="btn btn-ghost btn-sm" id="btnKokoroClearScript" type="button">Clear</button>
+                <button class="btn btn-primary" id="btnKokoroGenerate" type="button" style="background:linear-gradient(135deg, #10b981, #059669);border:none">
+                  <span id="kokoroBtnIcon">✨</span>
+                  <span id="kokoroBtnText">Generate Studio HD Voice</span>
                 </button>
               </div>
             </div>
+
+            <!-- Progress Box -->
+            <div class="tts-progress-box" id="kokoroProgressBox" hidden>
+              <div class="tts-progress-header">
+                <div class="tts-progress-info">
+                  <span class="tts-progress-spinner">⏳</span>
+                  <span class="tts-progress-status" id="kokoroProgressStatus">Synthesizing Studio HD Speech...</span>
+                </div>
+                <span class="tts-progress-pct-badge" id="kokoroProgressPct">0%</span>
+              </div>
+              <div class="tts-progress-track">
+                <div class="tts-progress-fill" id="kokoroProgressFill" style="width: 0%"></div>
+              </div>
+            </div>
           </div>
 
-          <div class="tts-result-card" id="elevenResultCard" hidden>
+          <div class="tts-result-card" id="kokoroResultCard" hidden>
             <div class="result-header">
               <div class="result-info">
-                <strong style="color:var(--text)">🎉 ElevenLabs Generation Ready!</strong>
-                <small class="hint" id="elevenResultMeta">Duration: 0.0s</small>
+                <strong style="color:var(--text)">🎉 Studio HD Voice Ready!</strong>
+                <small class="hint" id="kokoroResultMeta">Duration: 0.0s • 24kHz CD Audio</small>
               </div>
-              <button class="btn btn-primary" id="btnElevenSendToTimeline" type="button" style="background:linear-gradient(135deg,#10b981,#059669);border:none">
+              <button class="btn btn-primary" id="btnKokoroSendToTimeline" type="button" style="background:linear-gradient(135deg,#10b981,#059669);border:none">
                 🎬 Send to Video Timeline
               </button>
             </div>
-            <audio id="elevenAudioPlayer" controls style="width:100%;height:38px;outline:none"></audio>
+            <audio id="kokoroAudioPlayer" controls style="width:100%;height:38px;outline:none"></audio>
+            <div style="display:flex;gap:0.5rem;margin-top:0.6rem">
+              <a id="kokoroDownloadAudioLink" class="btn btn-ghost btn-sm" href="#" download="kokoro_studio.mp3">📥 Download MP3</a>
+              <a id="kokoroDownloadSrtLink" class="btn btn-ghost btn-sm" href="#" download="subtitles.srt">📄 Download Subtitles (SRT)</a>
+            </div>
           </div>
         </main>
 
-        <!-- Right: Voice selector & sliders -->
+        <!-- Right: Active Voice & Speed Slider -->
         <aside class="voice-inspector">
           <div class="voice-select-box">
             <div class="card-head-simple" style="margin-bottom:0.4rem">
-              <span style="font-size:0.75rem;font-weight:700;color:var(--text-dim)">ELEVENLABS VOICE</span>
-              <button class="btn btn-ghost btn-xs" id="btnElevenChangeVoice" type="button" style="color:#c4b5fd;font-weight:600">Library ❯</button>
+              <span style="font-size:0.75rem;font-weight:700;color:var(--text-dim)">SELECTED STUDIO VOICE</span>
             </div>
-            <div class="voice-selector-card-btn" id="elevenVoiceTrigger">
+            <div class="voice-selector-card-btn" id="kokoroActiveCard">
               <div class="vpc-info">
-                <span class="vpc-flag">🇬🇧</span>
+                <span class="vpc-flag" id="kokoroActiveFlag">🇺🇸</span>
                 <div>
-                  <strong>Poppy</strong>
-                  <small>Bright and Dynamic • British Female</small>
+                  <strong id="kokoroActiveName">Adam (Studio)</strong>
+                  <small id="kokoroActiveMeta">American (US) • Male • Deep Narration</small>
                 </div>
               </div>
             </div>
@@ -1416,31 +1441,23 @@
           <div class="voice-slider-group" style="margin-top:1rem">
             <div class="slider-row">
               <div class="slider-label">
-                <span>Stability</span>
-                <strong id="valElevenStability">85%</strong>
+                <span>Speaking Speed</span>
+                <strong id="valKokoroSpeed">1.0x</strong>
               </div>
-              <input type="range" id="sliderElevenStability" min="0" max="100" step="5" value="85">
+              <input type="range" id="sliderKokoroSpeed" min="0.6" max="1.8" step="0.05" value="1.0">
             </div>
+          </div>
 
-            <div class="slider-row">
-              <div class="slider-label">
-                <span>Similarity Boost / Diversity</span>
-                <strong id="valElevenSim">75%</strong>
-              </div>
-              <input type="range" id="sliderElevenSim" min="0" max="100" step="5" value="75">
-            </div>
-
-            <div class="slider-row">
-              <div class="slider-label">
-                <span>Style Exaggeration</span>
-                <strong id="valElevenStyle">0%</strong>
-              </div>
-              <input type="range" id="sliderElevenStyle" min="0" max="100" step="5" value="0">
+          <div class="voice-credit-pill" style="margin-top:1.2rem">
+            <span class="vcp-icon">💎</span>
+            <div class="vcp-text">
+              <strong>Studio HD Audio (24kHz)</strong>
+              <small>Kokoro-82M Neural Synthesis</small>
             </div>
           </div>
         </aside>
       </div>
-    </div> <!-- END #pageElevenLabs -->
+    </div> <!-- END #pageKokoro -->
 
   </section> <!-- END #panelVoiceStudio -->
 

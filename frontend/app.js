@@ -1738,6 +1738,9 @@ let voiceStudioState = {
   voices: [],
   allVoices: [],
   selectedVoice: null,
+  kokoroVoices: [],
+  selectedKokoroVoice: null,
+  clonedSampleFilename: null,
   activeSubpage: "edgetts",
   lastGenerated: null,
   history: [],
@@ -1858,10 +1861,25 @@ async function initVoiceStudio() {
     console.warn("Could not load voices from backend:", err);
   }
 
+  // 1b. Fetch Kokoro Studio HD voices catalog
+  try {
+    const kdata = await jget("/tts/kokoro/voices");
+    if (kdata && kdata.voices) {
+      voiceStudioState.kokoroVoices = kdata.voices;
+      if (!voiceStudioState.selectedKokoroVoice && kdata.voices.length) {
+        voiceStudioState.selectedKokoroVoice = kdata.voices[0];
+      }
+      renderKokoroVoiceList();
+      updateSelectedKokoroVoiceUI();
+    }
+  } catch (err) {
+    console.warn("Could not load Kokoro voices from backend:", err);
+  }
+
   // 2. Sub-Pages Switcher inside AI Voice Studio
   on("subtabEdgeTTS", "click", () => switchVoiceSubpage("edgetts"));
   on("subtabCloning", "click", () => switchVoiceSubpage("cloning"));
-  on("subtabElevenLabs", "click", () => switchVoiceSubpage("elevenlabs"));
+  on("subtabKokoro", "click", () => switchVoiceSubpage("kokoro"));
 
   // 3. Textarea listener (Edge-TTS)
   const textarea = $("ttsScriptTextarea");
@@ -2026,36 +2044,29 @@ async function initVoiceStudio() {
   on("btnCloneGenerate", "click", handleGenerateCloning);
   on("btnCloneSendToTimeline", "click", handleSendTtsToTimeline);
 
-  // 13. ElevenLabs Workspace Setup
-  const savedKey = localStorage.getItem("elevenlabs_api_key");
-  if (savedKey && $("inputElevenApiKey")) $("inputElevenApiKey").value = savedKey;
-  on("btnSaveElevenKey", "click", () => {
-    const val = (($("inputElevenApiKey") || {}).value || "").trim();
-    if (val) {
-      localStorage.setItem("elevenlabs_api_key", val);
-      toast("ElevenLabs API Key saved locally! 🔑", "ok");
-    } else {
-      localStorage.removeItem("elevenlabs_api_key");
-      toast("API Key removed.", "warn");
-    }
-  });
-  const elevenTextarea = $("elevenScriptTextarea");
-  if (elevenTextarea) {
-    elevenTextarea.addEventListener("input", () => {
-      if ($("elevenCharCount")) $("elevenCharCount").textContent = elevenTextarea.value.length.toLocaleString();
+  // 13. Kokoro-82M Studio Setup
+  const kokoroTextarea = $("kokoroScriptTextarea");
+  if (kokoroTextarea) {
+    kokoroTextarea.addEventListener("input", () => {
+      if ($("kokoroCharCount")) $("kokoroCharCount").textContent = kokoroTextarea.value.length.toLocaleString();
     });
   }
-  on("btnElevenClearScript", "click", () => {
-    if (elevenTextarea) {
-      elevenTextarea.value = "";
-      if ($("elevenCharCount")) $("elevenCharCount").textContent = "0";
+  on("btnKokoroClearScript", "click", () => {
+    if (kokoroTextarea) {
+      kokoroTextarea.value = "";
+      if ($("kokoroCharCount")) $("kokoroCharCount").textContent = "0";
     }
   });
-  setupSliderDisplay("sliderElevenStability", "valElevenStability", (v) => v + "%");
-  setupSliderDisplay("sliderElevenSim", "valElevenSim", (v) => v + "%");
-  setupSliderDisplay("sliderElevenStyle", "valElevenStyle", (v) => v + "%");
-  on("btnElevenGenerate", "click", handleGenerateElevenLabs);
-  on("btnElevenSendToTimeline", "click", handleSendTtsToTimeline);
+  setupSliderDisplay("sliderKokoroSpeed", "valKokoroSpeed", (v) => Number(v).toFixed(2) + "x");
+  on("btnKokoroGenerate", "click", handleGenerateKokoro);
+  on("btnKokoroSendToTimeline", "click", handleSendTtsToTimeline);
+
+  // Quick Starters for Kokoro
+  $$("#pageKokoro .scenario-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      loadKokoroScenarioTemplate(chip.dataset.scenario);
+    });
+  });
 }
 
 /* ---------------- Sub-Pages Switcher inside AI Voice Studio ---------------- */
@@ -2064,15 +2075,15 @@ function switchVoiceSubpage(subpage) {
 
   const isEdge = subpage === "edgetts";
   const isClone = subpage === "cloning";
-  const isEleven = subpage === "elevenlabs";
+  const isKokoro = subpage === "kokoro";
 
   if ($("subtabEdgeTTS")) $("subtabEdgeTTS").classList.toggle("is-active", isEdge);
   if ($("subtabCloning")) $("subtabCloning").classList.toggle("is-active", isClone);
-  if ($("subtabElevenLabs")) $("subtabElevenLabs").classList.toggle("is-active", isEleven);
+  if ($("subtabKokoro")) $("subtabKokoro").classList.toggle("is-active", isKokoro);
 
   if ($("pageEdgeTTS")) $("pageEdgeTTS").hidden = !isEdge;
   if ($("pageCloning")) $("pageCloning").hidden = !isClone;
-  if ($("pageElevenLabs")) $("pageElevenLabs").hidden = !isEleven;
+  if ($("pageKokoro")) $("pageKokoro").hidden = !isKokoro;
 }
 
 /* ---------------- Voice Library Modal Controls ---------------- */
@@ -2489,14 +2500,12 @@ async function handleGenerateCloning() {
     return;
   }
 
-  toast("Generating cloned voice synthesis...", "ok");
-  // Synthesize using session cloned voice or primary neural model
+  toast("Generating F5-TTS Flow-Matching cloned voice...", "ok");
   try {
-    const res = await jpost("/tts/generate", {
+    const res = await jpost("/tts/f5/clone", {
       text,
-      voice: (voiceStudioState.selectedVoice ? voiceStudioState.selectedVoice.id : "ur-PK-AsadNeural"),
+      sample_filename: voiceStudioState.clonedSampleFilename || null,
       speed: parseFloat(($("sliderCloneSpeed") || {}).value) || 1.0,
-      pitch: 0,
       session_id: S.sid || null
     });
 
@@ -2508,48 +2517,200 @@ async function handleGenerateCloning() {
       player.src = res.audio_url;
       player.play().catch(() => {});
     }
-    if ($("cloneResultMeta")) $("cloneResultMeta").textContent = `Duration: ${res.duration.toFixed(1)}s • Cloned Speaker`;
-    toast("Cloned voice synthesized! 🎉", "ok");
+    if ($("cloneResultMeta")) $("cloneResultMeta").textContent = `Duration: ${res.duration.toFixed(1)}s • F5-TTS Flow-Matching Speaker`;
+    toast("F5-TTS Voice Cloned Successfully! 🧬✨", "ok");
   } catch (err) {
     toast("Cloning error: " + err.message, "err");
   }
 }
 
-async function handleGenerateElevenLabs() {
-  const textarea = $("elevenScriptTextarea");
-  const text = (textarea ? textarea.value : "").trim();
-  if (!text) {
-    toast("Please enter script for ElevenLabs generation.", "warn");
-    return;
-  }
+function renderKokoroVoiceList() {
+  const container = $("kokoroVoiceList");
+  if (!container) return;
+  clear(container);
 
-  const apiKey = localStorage.getItem("elevenlabs_api_key");
-  if (!apiKey) {
-    toast("Please configure your ElevenLabs API Key in the left sidebar first.", "warn");
-    return;
-  }
+  const voices = voiceStudioState.kokoroVoices || [];
+  voices.forEach(v => {
+    const isSelected = voiceStudioState.selectedKokoroVoice && voiceStudioState.selectedKokoroVoice.id === v.id;
 
-  toast("Connecting to ElevenLabs API...", "ok");
+    const auditionBtn = el("button", {
+      cls: "kokoro-v-audition-btn",
+      attrs: { type: "button", title: "Listen to voice preview" },
+      text: "▶ Audition",
+      on: {
+        click: (e) => {
+          e.stopPropagation();
+          playKokoroAudition(v);
+        }
+      }
+    });
+
+    const item = el("div", {
+      cls: "kokoro-voice-item" + (isSelected ? " is-selected" : ""),
+      on: {
+        click: () => selectKokoroVoice(v)
+      }
+    }, [
+      el("div", { cls: "kokoro-v-left" }, [
+        el("span", { cls: "kokoro-v-flag", text: v.flag || "🎙️" }),
+        el("div", { cls: "kokoro-v-meta" }, [
+          el("div", { cls: "kokoro-v-name", text: v.name || v.id }),
+          el("div", { cls: "kokoro-v-desc", text: `${v.gender} • ${v.category || v.accent}` })
+        ])
+      ]),
+      el("div", { cls: "kokoro-v-actions" }, [
+        auditionBtn
+      ])
+    ]);
+
+    container.appendChild(item);
+  });
+}
+
+function selectKokoroVoice(v) {
+  voiceStudioState.selectedKokoroVoice = v;
+  updateSelectedKokoroVoiceUI();
+  renderKokoroVoiceList();
+  toast(`Selected Studio Voice: ${v.name}! 🌟`, "ok");
+}
+
+function updateSelectedKokoroVoiceUI() {
+  const v = voiceStudioState.selectedKokoroVoice;
+  if (!v) return;
+  if ($("kokoroActiveFlag")) $("kokoroActiveFlag").textContent = v.flag || "🎙️";
+  if ($("kokoroActiveName")) $("kokoroActiveName").textContent = v.name || v.id;
+  if ($("kokoroActiveMeta")) $("kokoroActiveMeta").textContent = `${v.accent} • ${v.gender} • ${v.category}`;
+}
+
+async function playKokoroAudition(v) {
+  if (!v) return;
+  const sample = v.sample || "Welcome to Kokoro Studio high fidelity voice synthesis.";
+  toast(`Synthesizing preview for ${v.name}...`, "ok");
+
   try {
-    const res = await jpost("/tts/generate", {
-      text,
-      voice: "en-US-ChristopherNeural",
+    const res = await jpost("/tts/kokoro/generate", {
+      text: sample,
+      voice: v.id,
       speed: 1.0,
-      pitch: 0,
       session_id: S.sid || null
     });
 
+    if (res && res.audio_url) {
+      if (voiceStudioState.previewAudio) {
+        voiceStudioState.previewAudio.pause();
+      }
+      voiceStudioState.previewAudio = new Audio(res.audio_url);
+      voiceStudioState.previewAudio.play().catch(() => {});
+    }
+  } catch (err) {
+    toast("Audition error: " + err.message, "err");
+  }
+}
+
+function loadKokoroScenarioTemplate(scenario) {
+  const textarea = $("kokoroScriptTextarea");
+  if (!textarea) return;
+
+  const templates = {
+    youtube_intro: "Stop scrolling! In this video, I am going to reveal the exact method creators are using to generate millions of views completely on autopilot.",
+    story_narration: "The ancient city lay quiet beneath the veil of twilight. For three centuries, no living soul had dared to step beyond the grand obsidian gates.",
+    faceless_tiktok: "Here are 3 mind-blowing psychology facts you definitely didn't know. Number one will completely change how you see your friends.",
+    motivational: "The only limit to your impact is your imagination and commitment. Every champion was once a contender who refused to give up."
+  };
+
+  if (templates[scenario]) {
+    textarea.value = templates[scenario];
+    if ($("kokoroCharCount")) $("kokoroCharCount").textContent = textarea.value.length.toLocaleString();
+    toast("Quick starter loaded into Kokoro Studio!", "ok");
+  }
+}
+
+async function handleGenerateKokoro() {
+  const textarea = $("kokoroScriptTextarea");
+  const text = (textarea ? textarea.value : "").trim();
+  if (!text) {
+    toast("Please enter your script for Kokoro Studio generation.", "warn");
+    return;
+  }
+
+  const voice = voiceStudioState.selectedKokoroVoice ? voiceStudioState.selectedKokoroVoice.id : "am_adam";
+  const speed = parseFloat(($("sliderKokoroSpeed") || {}).value) || 1.0;
+
+  const btn = $("btnKokoroGenerate");
+  const btnIcon = $("kokoroBtnIcon");
+  const btnText = $("kokoroBtnText");
+  const progressBox = $("kokoroProgressBox");
+  const progressPct = $("kokoroProgressPct");
+  const progressFill = $("kokoroProgressFill");
+  const progressStatus = $("kokoroProgressStatus");
+
+  if (btn) btn.disabled = true;
+  if (btnIcon) btnIcon.textContent = "⏳";
+  if (btnText) btnText.textContent = "Synthesizing...";
+
+  if (progressBox) progressBox.hidden = false;
+  if (progressPct) progressPct.textContent = "15%";
+  if (progressFill) progressFill.style.width = "15%";
+  if (progressStatus) progressStatus.textContent = "Initializing Kokoro-82M ONNX model...";
+
+  let pct = 15;
+  const progressTimer = setInterval(() => {
+    if (pct < 85) {
+      pct += Math.floor(Math.random() * 12) + 5;
+      if (pct > 85) pct = 85;
+      if (progressPct) progressPct.textContent = pct + "%";
+      if (progressFill) progressFill.style.width = pct + "%";
+      if (pct > 50 && progressStatus) progressStatus.textContent = "Generating 24kHz HD studio waveform...";
+    }
+  }, 250);
+
+  try {
+    const res = await jpost("/tts/kokoro/generate", {
+      text,
+      voice,
+      speed,
+      session_id: S.sid || null
+    });
+
+    clearInterval(progressTimer);
+    if (progressPct) progressPct.textContent = "100%";
+    if (progressFill) progressFill.style.width = "100%";
+    if (progressStatus) progressStatus.textContent = "Completed! 24kHz CD Audio Ready.";
+
     voiceStudioState.lastGenerated = res;
-    const card = $("elevenResultCard");
+    const card = $("kokoroResultCard");
     if (card) card.hidden = false;
-    const player = $("elevenAudioPlayer");
+
+    const player = $("kokoroAudioPlayer");
     if (player && res.audio_url) {
       player.src = res.audio_url;
       player.play().catch(() => {});
     }
-    toast("ElevenLabs generation completed! ✨", "ok");
+
+    if ($("kokoroResultMeta")) {
+      $("kokoroResultMeta").textContent = `Duration: ${res.duration.toFixed(1)}s • 24kHz CD Audio • ${res.word_count || (res.words && res.words.length) || 0} words`;
+    }
+
+    const dlAudio = $("kokoroDownloadAudioLink");
+    if (dlAudio && res.audio_url) dlAudio.href = res.audio_url;
+
+    const dlSrt = $("kokoroDownloadSrtLink");
+    if (dlSrt && res.srt_filename) {
+      dlSrt.href = API + "/files/" + (S.sid || "tts_cache") + "/tts/" + res.srt_filename;
+    }
+
+    toast("🌟 Kokoro Studio HD speech generated successfully!", "ok");
   } catch (err) {
-    toast(err.message, "err");
+    clearInterval(progressTimer);
+    toast("Kokoro generation error: " + err.message, "err");
+  } finally {
+    clearInterval(progressTimer);
+    if (btn) btn.disabled = false;
+    if (btnIcon) btnIcon.textContent = "✨";
+    if (btnText) btnText.textContent = "Generate Studio HD Voice";
+    setTimeout(() => {
+      if (progressBox) progressBox.hidden = true;
+    }, 2800);
   }
 }
 
@@ -2600,11 +2761,12 @@ async function handleUploadCloneSample(file) {
 
   try {
     const res = await fpost("/tts/clone-sample/" + S.sid, fd);
-    toast((res && res.message) || "Voice sample uploaded for cloning! 🧬", "ok");
+    voiceStudioState.clonedSampleFilename = (res && res.filename) || file.name;
+    toast((res && res.message) || "Voice sample uploaded for F5-TTS cloning! 🧬", "ok");
     const status = $("cloneSampleStatus");
     if (status) {
-      status.textContent = `${file.name} (${res.duration}s) - Ready to clone`;
-      status.style.color = "#34d399";
+      status.textContent = `${file.name} (${res && res.duration ? res.duration.toFixed(1) : "Audio"}s) - Ready for F5-TTS Flow-Matching`;
+      status.style.color = "#10b981";
     }
   } catch (err) {
     toast(err.message, "err");

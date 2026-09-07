@@ -12,6 +12,9 @@ env/
 backend/uploads/*
 !backend/uploads/.gitkeep
 backend/data/auth_sessions.json
+backend/models/*
+backend/temp/*
+uploads/*
 
 # OS files
 .DS_Store

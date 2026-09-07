@@ -792,6 +792,144 @@ async def upload_clone_sample(session_id: str, file: UploadFile = File(...)):
     }
 
 
+# ----------------------------------------------------------------------------
+# Kokoro-82M Studio HD Voices Endpoints (100% Free, Zero API Keys)
+# ----------------------------------------------------------------------------
+
+@app.get("/tts/kokoro/voices")
+async def get_kokoro_voices():
+    """Returns curated Kokoro-82M HD studio voices."""
+    import kokoro_engine
+    return {
+        "status": "ok",
+        "voices": kokoro_engine.KOKORO_VOICES,
+        "is_installed": kokoro_engine.is_kokoro_installed(),
+        "is_model_ready": kokoro_engine.is_kokoro_model_ready()
+    }
+
+
+@app.post("/tts/kokoro/generate")
+async def generate_kokoro(request: Request,
+                          text: str = Body(..., embed=True),
+                          voice: str = Body("am_adam", embed=True),
+                          speed: float = Body(1.0, embed=True),
+                          session_id: Optional[str] = Body(None, embed=True)):
+    """Generates studio-grade speech via Kokoro-82M."""
+    clean = (text or "").strip()
+    if not clean:
+        raise HTTPException(status_code=400, detail="Script text cannot be empty.")
+
+    target_session = session_id if (session_id and session_id in SESSIONS) else None
+    if target_session:
+        out_dir = session_dir(target_session, "tts")
+    else:
+        out_dir = os.path.join(UPLOAD_DIR, "tts_cache")
+    os.makedirs(out_dir, exist_ok=True)
+
+    import kokoro_engine
+    try:
+        res = await kokoro_engine.synthesize_kokoro_speech(
+            text=clean,
+            voice_id=voice,
+            speed=float(speed or 1.0),
+            output_dir=out_dir
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Kokoro generation error: {str(e)}")
+
+    if target_session:
+        audio_url = file_url(request, target_session, "tts", res["audio_filename"])
+    else:
+        audio_url = f"{base_url(request)}/files/tts_cache/{res['audio_filename']}"
+
+    return {
+        "status": "ok",
+        "engine": "Kokoro-82M Studio HD",
+        "audio_url": audio_url,
+        "audio_filename": res["audio_filename"],
+        "audio_path": res["audio_path"],
+        "duration": res["duration"],
+        "words": res["words"],
+        "word_count": len(res["words"]),
+        "srt_filename": res["srt_filename"],
+        "srt_path": res["srt_path"],
+        "clean_text": res["clean_text"],
+        "session_id": target_session
+    }
+
+
+# ----------------------------------------------------------------------------
+# F5-TTS Flow-Matching Voice Cloning Endpoints
+# ----------------------------------------------------------------------------
+
+@app.post("/tts/f5/clone")
+async def clone_voice_f5(request: Request,
+                         text: str = Body(..., embed=True),
+                         sample_filename: Optional[str] = Body(None, embed=True),
+                         speed: float = Body(1.0, embed=True),
+                         session_id: Optional[str] = Body(None, embed=True)):
+    """Clones voice using F5-TTS Flow Matching from uploaded sample."""
+    clean = (text or "").strip()
+    if not clean:
+        raise HTTPException(status_code=400, detail="Script text cannot be empty.")
+
+    target_session = session_id if (session_id and session_id in SESSIONS) else None
+    if target_session:
+        out_dir = session_dir(target_session, "tts")
+        clone_dir = session_dir(target_session, "voice_clones")
+    else:
+        out_dir = os.path.join(UPLOAD_DIR, "tts_cache")
+        clone_dir = out_dir
+    os.makedirs(out_dir, exist_ok=True)
+
+    # Locate uploaded sample
+    sample_path = ""
+    if sample_filename:
+        p = os.path.join(clone_dir, sample_filename)
+        if os.path.exists(p):
+            sample_path = p
+        else:
+            p2 = os.path.join(clone_dir, f"sample_{sample_filename}")
+            if os.path.exists(p2):
+                sample_path = p2
+
+    if not sample_path and os.path.exists(clone_dir):
+        files = [os.path.join(clone_dir, f) for f in os.listdir(clone_dir) if is_audio_file(f)]
+        if files:
+            sample_path = files[-1]
+
+    import f5tts_engine
+    try:
+        res = await f5tts_engine.synthesize_f5_clone(
+            sample_path=sample_path,
+            script_text=clean,
+            speed=float(speed or 1.0),
+            output_dir=out_dir
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"F5-TTS cloning error: {str(e)}")
+
+    if target_session:
+        audio_url = file_url(request, target_session, "tts", res["audio_filename"])
+    else:
+        audio_url = f"{base_url(request)}/files/tts_cache/{res['audio_filename']}"
+
+    return {
+        "status": "ok",
+        "engine": "F5-TTS Flow-Matching",
+        "audio_url": audio_url,
+        "audio_filename": res["audio_filename"],
+        "audio_path": res["audio_path"],
+        "duration": res["duration"],
+        "words": res["words"],
+        "word_count": len(res["words"]),
+        "srt_filename": res["srt_filename"],
+        "srt_path": res["srt_path"],
+        "clean_text": res["clean_text"],
+        "session_id": target_session
+    }
+
+
 
 def sync_segments_to_voice(segments: list, voice_duration: float) -> list:
     """

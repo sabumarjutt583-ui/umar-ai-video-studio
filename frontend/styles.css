@@ -1384,6 +1384,87 @@ table.grid td.rownum { color: var(--text-dim); font-variant-numeric: tabular-num
   transition: width 0.3s ease-out;
 }
 
+/* Kokoro Studio Voices Sidebar List */
+.kokoro-voice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+.kokoro-voice-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.65rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.kokoro-voice-item:hover {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+.kokoro-voice-item.is-selected {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.6);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+.kokoro-v-left {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+.kokoro-v-flag {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+.kokoro-v-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.kokoro-v-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kokoro-v-desc {
+  font-size: 0.67rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kokoro-v-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.kokoro-v-audition-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.72rem;
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.kokoro-v-audition-btn:hover {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: #10b981;
+  color: #fff;
+}
+
+
 
 
 
