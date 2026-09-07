@@ -798,11 +798,15 @@ async def upload_clone_sample(session_id: str, file: UploadFile = File(...)):
 
 @app.get("/tts/kokoro/voices")
 async def get_kokoro_voices():
-    """Returns curated Kokoro-82M HD studio voices."""
-    import kokoro_engine
+    """Returns all 12 language boxes and curated premium voices routed to top engines."""
+    try:
+        from backend import premium_catalog, kokoro_engine
+    except ImportError:
+        import premium_catalog, kokoro_engine
     return {
         "status": "ok",
-        "voices": kokoro_engine.KOKORO_VOICES,
+        "languages": premium_catalog.get_all_languages(),
+        "voices": premium_catalog.PREMIUM_VOICES,
         "is_installed": kokoro_engine.is_kokoro_installed(),
         "is_model_ready": kokoro_engine.is_kokoro_model_ready()
     }
@@ -814,7 +818,7 @@ async def generate_kokoro(request: Request,
                           voice: str = Body("am_adam", embed=True),
                           speed: float = Body(1.0, embed=True),
                           session_id: Optional[str] = Body(None, embed=True)):
-    """Generates studio-grade speech via Kokoro-82M."""
+    """Generates studio-grade speech via the best engine for the selected voice."""
     clean = (text or "").strip()
     if not clean:
         raise HTTPException(status_code=400, detail="Script text cannot be empty.")
@@ -826,16 +830,43 @@ async def generate_kokoro(request: Request,
         out_dir = os.path.join(UPLOAD_DIR, "tts_cache")
     os.makedirs(out_dir, exist_ok=True)
 
-    import kokoro_engine
     try:
-        res = await kokoro_engine.synthesize_kokoro_speech(
-            text=clean,
-            voice_id=voice,
-            speed=float(speed or 1.0),
-            output_dir=out_dir
-        )
+        from backend import premium_catalog
+    except ImportError:
+        import premium_catalog
+
+    v_meta = premium_catalog.find_premium_voice(voice)
+    is_kokoro = (v_meta and v_meta.get("engine") == "kokoro") or voice.startswith(("af_", "am_", "bf_", "bm_", "hf_", "hm_", "jf_", "jm_", "zf_", "zm_", "ef_", "em_", "ff_", "if_", "pf_")) or voice in ("af",)
+
+    try:
+        if is_kokoro:
+            try:
+                from backend import kokoro_engine
+            except ImportError:
+                import kokoro_engine
+            res = await kokoro_engine.synthesize_kokoro_speech(
+                text=clean,
+                voice_id=voice,
+                speed=float(speed or 1.0),
+                output_dir=out_dir
+            )
+        else:
+            try:
+                from backend import tts_engine
+            except ImportError:
+                import tts_engine
+            res = await tts_engine.synthesize_speech(
+                text=clean,
+                voice=voice,
+                speed=float(speed or 1.0),
+                pitch=0,
+                output_dir=out_dir,
+                file_prefix="premium_studio"
+            )
+            res["engine"] = (v_meta and v_meta.get("engine_badge")) or "Master Studio HD"
+            res["voice"] = voice
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Kokoro generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Studio generation error: {str(e)}")
 
     if target_session:
         audio_url = file_url(request, target_session, "tts", res["audio_filename"])
@@ -844,16 +875,16 @@ async def generate_kokoro(request: Request,
 
     return {
         "status": "ok",
-        "engine": "Kokoro-82M Studio HD",
+        "engine": res.get("engine", "Studio HD Voice"),
         "audio_url": audio_url,
         "audio_filename": res["audio_filename"],
         "audio_path": res["audio_path"],
         "duration": res["duration"],
-        "words": res["words"],
-        "word_count": len(res["words"]),
-        "srt_filename": res["srt_filename"],
-        "srt_path": res["srt_path"],
-        "clean_text": res["clean_text"],
+        "words": res.get("words", []),
+        "word_count": len(res.get("words", [])),
+        "srt_filename": res.get("srt_filename"),
+        "srt_path": res.get("srt_path"),
+        "clean_text": res.get("clean_text", clean),
         "session_id": target_session
     }
 

@@ -1009,7 +1009,7 @@ table.grid td.rownum { color: var(--text-dim); font-variant-numeric: tabular-num
 /* 3-Column Studio Grid */
 .voice-studio-grid {
   display: grid;
-  grid-template-columns: 240px 1fr 310px;
+  grid-template-columns: 310px 1fr 280px;
   gap: 1.25rem;
   align-items: start;
 }
@@ -1384,15 +1384,100 @@ table.grid td.rownum { color: var(--text-dim); font-variant-numeric: tabular-num
   transition: width 0.3s ease-out;
 }
 
-/* Kokoro Studio Voices Sidebar List */
-.kokoro-voice-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-height: 480px;
+/* Multi-Language Studio Matrix Tiles Grid */
+.premium-lang-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.45rem;
+  max-height: 235px;
   overflow-y: auto;
   padding-right: 0.2rem;
 }
+
+.premium-lang-tile {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0.55rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  position: relative;
+  text-align: left;
+}
+
+.premium-lang-tile:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.premium-lang-tile.is-active {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.22), rgba(16, 185, 129, 0.15));
+  border-color: #a78bfa;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.35);
+}
+
+.plt-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.plt-flag {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.plt-count {
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.premium-lang-tile.is-active .plt-count {
+  background: rgba(167, 139, 250, 0.25);
+  color: #c4b5fd;
+}
+
+.plt-name {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.15rem;
+}
+
+.plt-engine {
+  font-size: 0.62rem;
+  color: #10b981;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.premium-lang-tile.is-active .plt-engine {
+  color: #34d399;
+}
+
+/* Studio Voices List */
+.kokoro-voice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 290px;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+
 .kokoro-voice-item {
   display: flex;
   align-items: center;
@@ -1404,30 +1489,36 @@ table.grid td.rownum { color: var(--text-dim); font-variant-numeric: tabular-num
   cursor: pointer;
   transition: all 0.15s ease;
 }
+
 .kokoro-voice-item:hover {
   background: rgba(16, 185, 129, 0.08);
   border-color: rgba(16, 185, 129, 0.3);
 }
+
 .kokoro-voice-item.is-selected {
   background: rgba(16, 185, 129, 0.15);
   border-color: rgba(16, 185, 129, 0.6);
   box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
 }
+
 .kokoro-v-left {
   display: flex;
   align-items: center;
   gap: 0.55rem;
   min-width: 0;
 }
+
 .kokoro-v-flag {
   font-size: 1.15rem;
   line-height: 1;
 }
+
 .kokoro-v-meta {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
+
 .kokoro-v-name {
   font-size: 0.8rem;
   font-weight: 600;
@@ -1436,6 +1527,7 @@ table.grid td.rownum { color: var(--text-dim); font-variant-numeric: tabular-num
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .kokoro-v-desc {
   font-size: 0.67rem;
   color: var(--text-dim);
@@ -1443,26 +1535,43 @@ table.grid td.rownum { color: var(--text-dim); font-variant-numeric: tabular-num
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.kokoro-v-engine-pill {
+  font-size: 0.6rem;
+  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.12);
+  padding: 0.08rem 0.35rem;
+  border-radius: 4px;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  margin-top: 0.18rem;
+  display: inline-block;
+  width: fit-content;
+}
+
 .kokoro-v-actions {
   display: flex;
   align-items: center;
   gap: 0.3rem;
 }
+
 .kokoro-v-audition-btn {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--line);
   border-radius: 6px;
-  padding: 0.2rem 0.45rem;
+  padding: 0.22rem 0.48rem;
   font-size: 0.72rem;
   color: #e2e8f0;
   cursor: pointer;
   transition: 0.15s;
+  white-space: nowrap;
 }
+
 .kokoro-v-audition-btn:hover {
   background: rgba(16, 185, 129, 0.25);
   border-color: #10b981;
   color: #fff;
 }
+
 
 
 

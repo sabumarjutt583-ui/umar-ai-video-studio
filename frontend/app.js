@@ -1739,6 +1739,9 @@ let voiceStudioState = {
   allVoices: [],
   selectedVoice: null,
   kokoroVoices: [],
+  premiumLanguages: [],
+  premiumVoices: [],
+  selectedLanguage: "en",
   selectedKokoroVoice: null,
   clonedSampleFilename: null,
   activeSubpage: "edgetts",
@@ -1861,19 +1864,25 @@ async function initVoiceStudio() {
     console.warn("Could not load voices from backend:", err);
   }
 
-  // 1b. Fetch Kokoro Studio HD voices catalog
+  // 1b. Fetch Multi-Language Studio Matrix catalog
   try {
     const kdata = await jget("/tts/kokoro/voices");
-    if (kdata && kdata.voices) {
-      voiceStudioState.kokoroVoices = kdata.voices;
-      if (!voiceStudioState.selectedKokoroVoice && kdata.voices.length) {
-        voiceStudioState.selectedKokoroVoice = kdata.voices[0];
+    if (kdata) {
+      voiceStudioState.premiumLanguages = kdata.languages || [];
+      voiceStudioState.premiumVoices = kdata.voices || [];
+      voiceStudioState.selectedLanguage = "en";
+
+      const enVoices = voiceStudioState.premiumVoices.filter(v => v.language_id === "en");
+      if (!voiceStudioState.selectedKokoroVoice && enVoices.length) {
+        voiceStudioState.selectedKokoroVoice = enVoices[0];
       }
+
+      renderPremiumLanguageBoxes();
       renderKokoroVoiceList();
       updateSelectedKokoroVoiceUI();
     }
   } catch (err) {
-    console.warn("Could not load Kokoro voices from backend:", err);
+    console.warn("Could not load Premium Studio catalog from backend:", err);
   }
 
   // 2. Sub-Pages Switcher inside AI Voice Studio
@@ -2524,12 +2533,73 @@ async function handleGenerateCloning() {
   }
 }
 
+function renderPremiumLanguageBoxes() {
+  const grid = $("premiumLangGrid");
+  if (!grid) return;
+  clear(grid);
+
+  const langs = voiceStudioState.premiumLanguages || [];
+  langs.forEach(lang => {
+    const isActive = (voiceStudioState.selectedLanguage || "en") === lang.id;
+
+    const tile = el("button", {
+      cls: "premium-lang-tile" + (isActive ? " is-active" : ""),
+      attrs: { type: "button", title: `Select ${lang.name}` },
+      on: {
+        click: () => selectPremiumLanguage(lang.id)
+      }
+    }, [
+      el("div", { cls: "plt-top" }, [
+        el("span", { cls: "plt-flag", text: lang.flag || "🌐" }),
+        el("span", { cls: "plt-count", text: `${lang.count || 0} voices` })
+      ]),
+      el("div", { cls: "plt-name", text: lang.name || lang.id }),
+      el("div", { cls: "plt-engine", text: `💎 ${lang.badge || lang.engine_label}` })
+    ]);
+
+    grid.appendChild(tile);
+  });
+}
+
+function selectPremiumLanguage(langId) {
+  voiceStudioState.selectedLanguage = langId;
+  renderPremiumLanguageBoxes();
+
+  const langObj = (voiceStudioState.premiumLanguages || []).find(l => l.id === langId);
+  if ($("premiumActiveLangTitle")) {
+    $("premiumActiveLangTitle").textContent = langObj ? `${langObj.flag} ${langObj.name}` : "Studio Voices";
+  }
+  if ($("premiumActiveLangCount")) {
+    $("premiumActiveLangCount").textContent = `${(langObj && langObj.count) || 0} voices`;
+  }
+
+  // Auto-select first voice for this language
+  const voices = (voiceStudioState.premiumVoices || []).filter(v => v.language_id === langId);
+  if (voices.length) {
+    selectKokoroVoice(voices[0]);
+  } else {
+    renderKokoroVoiceList();
+  }
+}
+
 function renderKokoroVoiceList() {
   const container = $("kokoroVoiceList");
   if (!container) return;
   clear(container);
 
-  const voices = voiceStudioState.kokoroVoices || [];
+  const currentLang = voiceStudioState.selectedLanguage || "en";
+  const allVoices = voiceStudioState.premiumVoices || [];
+  const voices = allVoices.filter(v => v.language_id === currentLang);
+
+  if (!voices.length) {
+    container.appendChild(el("div", {
+      cls: "hint",
+      style: { padding: "1.5rem 0.5rem", textAlign: "center", fontSize: "0.78rem" },
+      text: "No voices found for this language."
+    }));
+    return;
+  }
+
   voices.forEach(v => {
     const isSelected = voiceStudioState.selectedKokoroVoice && voiceStudioState.selectedKokoroVoice.id === v.id;
 
@@ -2555,7 +2625,8 @@ function renderKokoroVoiceList() {
         el("span", { cls: "kokoro-v-flag", text: v.flag || "🎙️" }),
         el("div", { cls: "kokoro-v-meta" }, [
           el("div", { cls: "kokoro-v-name", text: v.name || v.id }),
-          el("div", { cls: "kokoro-v-desc", text: `${v.gender} • ${v.category || v.accent}` })
+          el("div", { cls: "kokoro-v-desc", text: `${v.gender} • ${v.category || v.accent}` }),
+          el("span", { cls: "kokoro-v-engine-pill", text: v.engine_badge || "Studio HD" })
         ])
       ]),
       el("div", { cls: "kokoro-v-actions" }, [
@@ -2571,7 +2642,7 @@ function selectKokoroVoice(v) {
   voiceStudioState.selectedKokoroVoice = v;
   updateSelectedKokoroVoiceUI();
   renderKokoroVoiceList();
-  toast(`Selected Studio Voice: ${v.name}! 🌟`, "ok");
+  toast(`Selected: ${v.name} (${v.accent || ""})! 🌟`, "ok");
 }
 
 function updateSelectedKokoroVoiceUI() {
@@ -2580,6 +2651,9 @@ function updateSelectedKokoroVoiceUI() {
   if ($("kokoroActiveFlag")) $("kokoroActiveFlag").textContent = v.flag || "🎙️";
   if ($("kokoroActiveName")) $("kokoroActiveName").textContent = v.name || v.id;
   if ($("kokoroActiveMeta")) $("kokoroActiveMeta").textContent = `${v.accent} • ${v.gender} • ${v.category}`;
+  if ($("kokoroActiveEngineTitle")) $("kokoroActiveEngineTitle").textContent = v.engine_badge || "Studio HD Voice";
+  if ($("kokoroActiveEngineSub")) $("kokoroActiveEngineSub").textContent = v.engine === "kokoro" ? "Kokoro-82M 24kHz CD Audio" : "Master Broadcast Neural Pipeline";
+  if ($("kokoroActiveEngineIcon")) $("kokoroActiveEngineIcon").textContent = v.engine === "kokoro" ? "💎" : "🌟";
 }
 
 async function playKokoroAudition(v) {
@@ -2651,7 +2725,8 @@ async function handleGenerateKokoro() {
   if (progressBox) progressBox.hidden = false;
   if (progressPct) progressPct.textContent = "15%";
   if (progressFill) progressFill.style.width = "15%";
-  if (progressStatus) progressStatus.textContent = "Initializing Kokoro-82M ONNX model...";
+  const engineName = (voiceStudioState.selectedKokoroVoice && voiceStudioState.selectedKokoroVoice.engine_badge) || "Studio HD";
+  if (progressStatus) progressStatus.textContent = `Synthesizing via ${engineName}...`;
 
   let pct = 15;
   const progressTimer = setInterval(() => {
@@ -2660,7 +2735,7 @@ async function handleGenerateKokoro() {
       if (pct > 85) pct = 85;
       if (progressPct) progressPct.textContent = pct + "%";
       if (progressFill) progressFill.style.width = pct + "%";
-      if (pct > 50 && progressStatus) progressStatus.textContent = "Generating 24kHz HD studio waveform...";
+      if (pct > 50 && progressStatus) progressStatus.textContent = `Mastering HD audio via ${engineName}...`;
     }
   }, 250);
 
@@ -2675,7 +2750,7 @@ async function handleGenerateKokoro() {
     clearInterval(progressTimer);
     if (progressPct) progressPct.textContent = "100%";
     if (progressFill) progressFill.style.width = "100%";
-    if (progressStatus) progressStatus.textContent = "Completed! 24kHz CD Audio Ready.";
+    if (progressStatus) progressStatus.textContent = `Completed! ${res.engine || "Studio HD"} Audio Ready.`;
 
     voiceStudioState.lastGenerated = res;
     const card = $("kokoroResultCard");
@@ -2688,7 +2763,7 @@ async function handleGenerateKokoro() {
     }
 
     if ($("kokoroResultMeta")) {
-      $("kokoroResultMeta").textContent = `Duration: ${res.duration.toFixed(1)}s • 24kHz CD Audio • ${res.word_count || (res.words && res.words.length) || 0} words`;
+      $("kokoroResultMeta").textContent = `Duration: ${res.duration.toFixed(1)}s • ${res.engine || "Studio HD"} • ${res.word_count || (res.words && res.words.length) || 0} words`;
     }
 
     const dlAudio = $("kokoroDownloadAudioLink");

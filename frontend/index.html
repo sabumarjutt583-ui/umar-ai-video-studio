@@ -1334,29 +1334,37 @@
     <div class="v-subpage" id="pageKokoro" hidden>
       <div class="voice-studio-grid">
 
-        <!-- Left: Kokoro Voices List -->
+        <!-- Left: Multi-Language Studio Matrix & Voices -->
         <aside class="voice-sidebar">
           <div class="voice-clone-box">
-            <div class="card-head-simple" style="margin-bottom:0.5rem">
-              <strong style="font-size:0.85rem">🌟 Kokoro Studio Voices</strong>
-              <span class="pill ok" style="font-size:0.65rem">100% FREE</span>
+            <div class="card-head-simple" style="margin-bottom:0.6rem">
+              <div>
+                <strong style="font-size:0.85rem">🌍 Studio Languages</strong>
+                <small style="display:block;font-size:0.68rem;color:var(--text-dim)">Click a language box to view voices</small>
+              </div>
+              <span class="pill ok" style="font-size:0.62rem">100% FREE</span>
             </div>
+
+            <!-- Language Selection Grid (Boxes) -->
+            <div class="premium-lang-grid" id="premiumLangGrid">
+              <!-- Dynamically populated 12 language boxes -->
+            </div>
+
+            <div class="premium-voices-header" style="margin-top:0.85rem;margin-bottom:0.4rem;display:flex;align-items:center;justify-content:space-between">
+              <strong id="premiumActiveLangTitle" style="font-size:0.75rem;color:#c4b5fd;text-transform:uppercase;letter-spacing:0.5px">Voices</strong>
+              <span id="premiumActiveLangCount" class="pill" style="font-size:0.65rem;background:rgba(255,255,255,0.08)">0 voices</span>
+            </div>
+
+            <!-- Voices List for Selected Language -->
             <div class="kokoro-voice-list" id="kokoroVoiceList">
               <!-- Dynamically populated -->
             </div>
           </div>
 
           <div class="voice-sidebar-card">
-            <strong>✨ ElevenLabs Rival Quality</strong>
+            <strong>🎯 Best Engine per Language</strong>
             <p class="hint" style="font-size:0.75rem;margin-top:0.3rem">
-              Kokoro-82M is the state-of-the-art open-source audio model. Generates 24,000 Hz CD quality speech with zero robotic artifacts.
-            </p>
-          </div>
-
-          <div class="voice-sidebar-card">
-            <strong>💎 Zero Cost & Unlimited</strong>
-            <p class="hint" style="font-size:0.75rem;margin-top:0.3rem">
-              No API keys, no monthly fees, and no per-character limits. 100% free forever.
+              English, Japanese & Chinese use <strong>Kokoro-82M (24kHz CD Audio)</strong>. Urdu, Arabic, Korean & Turkish use <strong>Broadcast Master Neural</strong>. Highest fidelity guaranteed.
             </p>
           </div>
         </aside>
@@ -1449,10 +1457,10 @@
           </div>
 
           <div class="voice-credit-pill" style="margin-top:1.2rem">
-            <span class="vcp-icon">💎</span>
+            <span class="vcp-icon" id="kokoroActiveEngineIcon">💎</span>
             <div class="vcp-text">
-              <strong>Studio HD Audio (24kHz)</strong>
-              <small>Kokoro-82M Neural Synthesis</small>
+              <strong id="kokoroActiveEngineTitle">Kokoro-82M Studio HD</strong>
+              <small id="kokoroActiveEngineSub">Multi-Engine Studio Matrix</small>
             </div>
           </div>
         </aside>

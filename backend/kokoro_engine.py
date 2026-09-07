@@ -104,9 +104,12 @@ def is_kokoro_installed() -> bool:
 
 
 MIN_MODEL_BYTES = 300 * 1024 * 1024
+VOICES_BIN_V1 = os.path.join(MODEL_DIR, "voices-v1.0.bin")
+VOICES_BIN_V0 = os.path.join(MODEL_DIR, "voices.bin")
 
 def is_kokoro_model_ready() -> bool:
-    if not (os.path.exists(ONNX_MODEL_PATH) and os.path.exists(VOICES_JSON_PATH)):
+    has_voices = os.path.exists(VOICES_BIN_V1) or os.path.exists(VOICES_BIN_V0) or os.path.exists(VOICES_JSON_PATH)
+    if not (os.path.exists(ONNX_MODEL_PATH) and has_voices):
         return False
     try:
         return os.path.getsize(ONNX_MODEL_PATH) >= MIN_MODEL_BYTES
@@ -127,8 +130,9 @@ def get_kokoro_instance():
 
     try:
         from kokoro_onnx import Kokoro
-        _KOKORO_INSTANCE = Kokoro(ONNX_MODEL_PATH, VOICES_JSON_PATH)
-        logger.info("Kokoro-82M ONNX model initialized successfully.")
+        vpath = VOICES_BIN_V1 if os.path.exists(VOICES_BIN_V1) else (VOICES_BIN_V0 if os.path.exists(VOICES_BIN_V0) else VOICES_JSON_PATH)
+        _KOKORO_INSTANCE = Kokoro(ONNX_MODEL_PATH, vpath)
+        logger.info(f"Kokoro-82M ONNX model initialized successfully with {os.path.basename(vpath)}.")
         return _KOKORO_INSTANCE
     except Exception as e:
         logger.warning(f"Could not load Kokoro instance: {e}")
