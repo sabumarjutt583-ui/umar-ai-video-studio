@@ -2079,6 +2079,15 @@ async function initVoiceStudio() {
 }
 
 /* ---------------- Sub-Pages Switcher inside AI Voice Studio ---------------- */
+function updateVoiceStudioHeader(icon, title, desc) {
+  const iconEl = $("voiceStudioMainIcon");
+  const titleEl = $("voiceStudioMainTitle");
+  const descEl = $("voiceStudioMainDesc");
+  if (iconEl) iconEl.textContent = icon;
+  if (titleEl) titleEl.textContent = title;
+  if (descEl) descEl.textContent = desc;
+}
+
 function switchVoiceSubpage(subpage) {
   voiceStudioState.activeSubpage = subpage;
 
@@ -2093,7 +2102,27 @@ function switchVoiceSubpage(subpage) {
   if ($("pageEdgeTTS")) $("pageEdgeTTS").hidden = !isEdge;
   if ($("pageCloning")) $("pageCloning").hidden = !isClone;
   if ($("pageKokoro")) $("pageKokoro").hidden = !isKokoro;
+
+  // Sync sidebar active states
+  if ($("navItemFreeVoices")) $("navItemFreeVoices").classList.toggle("is-active", isEdge);
+  if ($("navItemCloning")) $("navItemCloning").classList.toggle("is-active", isClone);
+  if ($("navItemPremiumVoices")) $("navItemPremiumVoices").classList.toggle("is-active", isKokoro);
+
+  if (isEdge) {
+    updateVoiceStudioHeader("🌐", "Free Neural AI Voices", "400+ 100% Free natural neural voices across 70+ languages with emotional style controls & pitch adjustments.");
+    const t = $("currentViewTitle");
+    if (t) t.textContent = "🌐 Free AI Voices Studio (400+ Neural Voices)";
+  } else if (isClone) {
+    updateVoiceStudioHeader("🧬", "F5-TTS Instant Voice Cloning", "Clone any voice in seconds with zero training. Upload a 5-15s clean audio sample and generate studio narration.");
+    const t = $("currentViewTitle");
+    if (t) t.textContent = "🧬 F5-TTS AI Voice Cloning Lab";
+  } else if (isKokoro) {
+    updateVoiceStudioHeader("🌟", "Premium Studio Voices (Multi-Language Matrix)", "Studio HD broadcast-quality voices. Select a language box below to explore high-fidelity curated voices powered by Kokoro-82M and Master Neural models.");
+    const t = $("currentViewTitle");
+    if (t) t.textContent = "🌟 Premium Voices Studio (Multi-Language Matrix)";
+  }
 }
+
 
 /* ---------------- Voice Library Modal Controls ---------------- */
 function openVoiceLibraryModal() {
@@ -2904,7 +2933,13 @@ function renderVoiceHistory() {
 
 /* ---------------------------- View & Panel Switching ---------------------------- */
 function switchView(view) {
+  if (view === "voiceStudio") {
+    view = voiceStudioState.activeSubpage === "kokoro" ? "premiumVoices" : (voiceStudioState.activeSubpage === "cloning" ? "cloning" : "freeVoices");
+  }
+
   S.activeView = view;
+  const isVoiceStudioView = (view === "freeVoices" || view === "cloning" || view === "premiumVoices");
+
   const panels = {
     welcome: $("panelWelcome"),
     workflow: $("panelWorkflow"),
@@ -2917,18 +2952,28 @@ function switchView(view) {
     workflow: $("navItemWorkflow"),
     editor: $("navItemEditor"),
     projects: $("navItemProjects"),
-    voiceStudio: $("navItemVoiceStudio"),
+    freeVoices: $("navItemFreeVoices"),
+    cloning: $("navItemCloning"),
+    premiumVoices: $("navItemPremiumVoices"),
   };
   const titles = {
     welcome: "🏠 Dashboard & Studio Overview",
     workflow: "🎛️ Video Creation Studio (Step-by-Step)",
     editor: "🎬 Professional Interactive Timeline Studio",
     projects: "📁 Projects Library & Saved Drafts",
-    voiceStudio: "🎙️ AI Voice Studio (Edge-TTS, Emotions & Cloning)",
+    freeVoices: "🌐 Free AI Voices Studio (400+ Neural Voices)",
+    cloning: "🧬 F5-TTS AI Voice Cloning Lab",
+    premiumVoices: "🌟 Premium Studio Voices (Multi-Language Matrix)",
   };
 
   Object.entries(panels).forEach(([k, p]) => {
-    if (p) p.hidden = (k !== view);
+    if (p) {
+      if (k === "voiceStudio") {
+        p.hidden = !isVoiceStudioView;
+      } else {
+        p.hidden = (k !== view);
+      }
+    }
   });
   Object.entries(navs).forEach(([k, n]) => {
     if (n) n.classList.toggle("is-active", k === view);
@@ -2941,8 +2986,15 @@ function switchView(view) {
     renderEditingPanel();
   } else if (view === "projects") {
     loadProjectsFullList();
-  } else if (view === "voiceStudio") {
+  } else if (isVoiceStudioView) {
     initVoiceStudio();
+    if (view === "freeVoices") {
+      switchVoiceSubpage("edgetts");
+    } else if (view === "cloning") {
+      switchVoiceSubpage("cloning");
+    } else if (view === "premiumVoices") {
+      switchVoiceSubpage("kokoro");
+    }
   }
 }
 
@@ -3338,7 +3390,9 @@ function wireEvents() {
   on("navItemNewProject", "click", openNewProjectModal);
   on("navItemWorkflow", "click", () => switchView("workflow"));
   on("navItemEditor", "click", () => switchView("editor"));
-  on("navItemVoiceStudio", "click", () => switchView("voiceStudio"));
+  on("navItemFreeVoices", "click", () => switchView("freeVoices"));
+  on("navItemCloning", "click", () => switchView("cloning"));
+  on("navItemPremiumVoices", "click", () => switchView("premiumVoices"));
   on("navItemProjects", "click", () => switchView("projects"));
   on("navItemAdmin", "click", openAdminSidebar);
   on("sidebarBtnLogout", "click", handleLogout);

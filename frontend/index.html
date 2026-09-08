@@ -158,10 +158,22 @@
         <span data-i18n="view_editor">Editing Panel</span>
       </button>
 
-      <button class="nav-item" id="navItemVoiceStudio" type="button">
-        <span class="nav-icon">🎙️</span>
-        <span>AI Voice Studio</span>
-        <span class="nav-badge-pill" style="background:#8b5cf6">Edge-TTS</span>
+      <button class="nav-item" id="navItemFreeVoices" type="button">
+        <span class="nav-icon">🌐</span>
+        <span>Free AI Voices</span>
+        <span class="nav-badge-pill ok">400+ Free</span>
+      </button>
+
+      <button class="nav-item" id="navItemCloning" type="button">
+        <span class="nav-icon">🧬</span>
+        <span>Voice Cloning</span>
+        <span class="nav-badge-pill" style="background:#8b5cf6">F5-TTS</span>
+      </button>
+
+      <button class="nav-item" id="navItemPremiumVoices" type="button">
+        <span class="nav-icon">🌟</span>
+        <span>Premium Voices</span>
+        <span class="nav-badge-pill" style="background:linear-gradient(135deg, #10b981, #059669)">Studio HD</span>
       </button>
 
       <button class="nav-item" id="navItemProjects" type="button">
@@ -945,46 +957,16 @@
     <div class="voice-studio-header">
       <div class="voice-studio-title-box">
         <div class="voice-studio-title-row">
-          <span class="voice-studio-icon">🎙️</span>
+          <span class="voice-studio-icon" id="voiceStudioMainIcon">🎙️</span>
           <div>
-            <h2 class="voice-studio-title">AI Voice Studio & Audio Lab</h2>
-            <p class="voice-studio-desc">Three dedicated creation workspaces: 100% Free Edge-TTS, AI Voice Cloning, and ElevenLabs PRO with interactive emotion controls.</p>
+            <h2 class="voice-studio-title" id="voiceStudioMainTitle">AI Voice Studio</h2>
+            <p class="voice-studio-desc" id="voiceStudioMainDesc">Professional studio voice generator.</p>
           </div>
         </div>
       </div>
       <div class="voice-studio-header-actions">
         <button class="btn btn-ghost btn-sm" id="btnVoiceStudioToTimeline" type="button">🎬 Open Video Timeline</button>
       </div>
-    </div>
-
-    <!-- Top Sub-Pages Navigation Switcher (Tabs inside AI Voice Studio) -->
-    <div class="voice-subpage-nav">
-      <button class="v-subtab is-active" id="subtabEdgeTTS" type="button">
-        <span class="vst-icon">🌐</span>
-        <div class="vst-text">
-          <strong>Free Edge-TTS Studio</strong>
-          <small>400+ Free Neural Voices • Emotion Tags</small>
-        </div>
-        <span class="pill ok" style="font-size:0.65rem">100% FREE</span>
-      </button>
-
-      <button class="v-subtab" id="subtabCloning" type="button">
-        <span class="vst-icon">🧬</span>
-        <div class="vst-text">
-          <strong>F5-TTS Voice Cloning</strong>
-          <small>Flow-Matching • Upload 5-15s Sample</small>
-        </div>
-        <span class="pill" style="font-size:0.65rem;background:#8b5cf6">F5-TTS AI</span>
-      </button>
-
-      <button class="v-subtab" id="subtabKokoro" type="button">
-        <span class="vst-icon">🌟</span>
-        <div class="vst-text">
-          <strong>Kokoro-82M Premium Studio</strong>
-          <small>Studio HD Voices • 100% Free</small>
-        </div>
-        <span class="pill ok" style="font-size:0.65rem;background:#10b981;color:#000;font-weight:700">STUDIO HD</span>
-      </button>
     </div>
 
     <!-- ==================== SUB-PAGE 1: EDGE-TTS FREE STUDIO ==================== -->
