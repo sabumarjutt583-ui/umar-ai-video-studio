@@ -2160,8 +2160,9 @@ function switchVoiceSubpage(subpage) {
 
 
 /* ---------------- Voice Library Modal Controls ---------------- */
-function openVoiceLibraryModal(mode = "free") {
+function openVoiceLibraryModal(mode = "free", caller = "studio") {
   voiceStudioState.libraryMode = mode;
+  voiceStudioState.libraryCaller = caller;
   const modal = $("voiceLibraryModal");
   if (!modal) return;
   modal.hidden = false;
@@ -2374,6 +2375,15 @@ function renderVoiceLibraryCards() {
 function selectVoiceFromLibrary(v) {
   if (voiceStudioState.libraryMode === "premium") {
     selectKokoroVoice(v);
+    return;
+  }
+  if (voiceStudioState.libraryCaller === "aivideo") {
+    aiVideoState.selectedVoice = v;
+    aiVideoState.voice = v.id;
+    aiVideoState.voiceEngine = "edgetts";
+    if (typeof updateAivSelectedVoiceUI === "function") updateAivSelectedVoiceUI();
+    closeVoiceLibraryModal();
+    toast(`Selected: ${v.name || v.id} for AI Video Studio! ✨`, "ok");
     return;
   }
   voiceStudioState.selectedVoice = v;
@@ -2662,6 +2672,15 @@ function selectPremiumLanguage(langId) {}
 function renderKokoroVoiceList() {}
 
 function selectKokoroVoice(v) {
+  if (voiceStudioState.libraryCaller === "aivideo") {
+    aiVideoState.selectedKokoroVoice = v;
+    aiVideoState.voice = v.id;
+    aiVideoState.voiceEngine = "kokoro";
+    if (typeof updateAivSelectedVoiceUI === "function") updateAivSelectedVoiceUI();
+    closeVoiceLibraryModal();
+    toast(`Selected: ${v.name} for AI Video Studio! ✨`, "ok");
+    return;
+  }
   voiceStudioState.selectedKokoroVoice = v;
   updateSelectedKokoroVoiceUI();
   closeVoiceLibraryModal();
@@ -3733,22 +3752,157 @@ const AIV_STARTERS = {
 };
 
 const aiVideoState = {
-  videoType: "motion_cinematic",
+  avatarMode: false,
+  avatarImageUrl: "",
+  avatarLocalPath: "",
+  avatarLayout: "full_presenter",
+  characters: [],
   niche: "history_mystery",
   customNicheText: "",
   style: "cinematic",
   customStylePrompt: "",
   aspectRatio: "9:16",
+  voiceEngine: "edgetts",
   voice: "ur-PK-AsadNeural",
+  selectedVoice: { id: "ur-PK-AsadNeural", name: "Asad Neural", flag: "🇵🇰", country: "Pakistan", language: "Urdu", gender: "Male" },
+  selectedKokoroVoice: { id: "am_adam", name: "Adam (Studio)", flag: "🇺🇸", country: "United States", language: "English", gender: "Male" },
   subtitleStyle: "tiktok_yellow",
   speed: 1.0,
-  characterDesc: "",
   activeJobId: null,
   pollTimer: null,
   scenes: [],
   lastResult: null,
   initialized: false
 };
+
+function updateAivSelectedVoiceUI() {
+  const isFree = aiVideoState.voiceEngine === "edgetts";
+  const freeBox = $("aivFreeVoiceCardBox");
+  const premBox = $("aivPremiumVoiceCardBox");
+  if (freeBox) freeBox.hidden = !isFree;
+  if (premBox) premBox.hidden = isFree;
+
+  const btnFree = $("btnAivTabFreeVoice");
+  const btnPrem = $("btnAivTabPremiumVoice");
+  if (btnFree) btnFree.classList.toggle("is-active", isFree);
+  if (btnPrem) btnPrem.classList.toggle("is-active", !isFree);
+
+  // Free voice UI
+  const fv = aiVideoState.selectedVoice;
+  if (fv) {
+    if ($("aivVpcFlag")) $("aivVpcFlag").textContent = fv.flag || "🎙️";
+    if ($("aivVpcName")) $("aivVpcName").textContent = fv.name || fv.id;
+    if ($("aivVpcDetails")) $("aivVpcDetails").textContent = `${fv.country || "Global"} • ${fv.language || ""} • ${fv.gender || "Neural"}`;
+  }
+
+  // Premium voice UI
+  const pv = aiVideoState.selectedKokoroVoice;
+  if (pv) {
+    if ($("aivKokoroVpcFlag")) $("aivKokoroVpcFlag").textContent = pv.flag || "🎙️";
+    if ($("aivKokoroVpcName")) $("aivKokoroVpcName").textContent = pv.name || pv.id;
+    if ($("aivKokoroVpcDetails")) $("aivKokoroVpcDetails").textContent = `${pv.accent || pv.country || "Global"} • ${pv.language || "English"} • ${pv.gender || "Studio"}`;
+  }
+}
+
+function renderAivCharacters() {
+  const container = $("aivCharactersList");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!aiVideoState.characters || aiVideoState.characters.length === 0) {
+    container.innerHTML = `<div class="hint" style="text-align:center;padding:0.4rem;font-size:0.68rem;color:var(--text-dim)">No characters added yet. Click "+ Add Character" to lock character appearance.</div>`;
+    return;
+  }
+
+  aiVideoState.characters.forEach((char, idx) => {
+    const item = document.createElement("div");
+    item.className = "character-card-item";
+
+    // Top row: Avatar button, name input, delete button
+    const topRow = document.createElement("div");
+    topRow.className = "char-top-row";
+
+    const avatarBtn = document.createElement("button");
+    avatarBtn.type = "button";
+    avatarBtn.className = "char-avatar-btn";
+    avatarBtn.title = "Click to upload reference image";
+    if (char.imageUrl) {
+      avatarBtn.innerHTML = `<img src="${char.imageUrl}" alt="${char.name || 'Char'}">`;
+    } else {
+      avatarBtn.innerHTML = `<span>📷</span>`;
+    }
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.style.display = "none";
+    avatarBtn.appendChild(fileInput);
+
+    avatarBtn.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        char.imageUrl = ev.target.result;
+        avatarBtn.innerHTML = `<img src="${char.imageUrl}" alt="${char.name || 'Char'}">`;
+      };
+      reader.readAsDataURL(file);
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("asset_type", "character");
+        const resp = await fetch("/ai-video/upload-asset", { method: "POST", body: formData });
+        const data = await resp.json();
+        if (data && data.url) {
+          char.imageUrl = data.url;
+          char.localPath = data.local_path;
+        }
+      } catch (err) {
+        console.warn("Character image upload failed", err);
+      }
+    });
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.className = "char-name-input";
+    nameInput.placeholder = `Character ${idx + 1} Name / Role`;
+    nameInput.value = char.name || "";
+    nameInput.addEventListener("input", () => {
+      char.name = nameInput.value.trim();
+    });
+
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "char-delete-btn";
+    delBtn.title = "Delete Character";
+    delBtn.textContent = "✕";
+    delBtn.addEventListener("click", () => {
+      aiVideoState.characters.splice(idx, 1);
+      renderAivCharacters();
+    });
+
+    topRow.appendChild(avatarBtn);
+    topRow.appendChild(nameInput);
+    topRow.appendChild(delBtn);
+
+    // Traits input
+    const traitsInput = document.createElement("input");
+    traitsInput.type = "text";
+    traitsInput.className = "char-traits-input";
+    traitsInput.placeholder = "Appearance traits (e.g. 25yo man, curly hair, navy suit)";
+    traitsInput.value = char.traits || "";
+    traitsInput.addEventListener("input", () => {
+      char.traits = traitsInput.value.trim();
+    });
+
+    item.appendChild(topRow);
+    item.appendChild(traitsInput);
+    container.appendChild(item);
+  });
+}
 
 function renderAivStarters(currentNiche) {
   const row = $("aivStartersRow");
@@ -3794,15 +3948,90 @@ function initAiVideoStudio() {
   if (aiVideoState.initialized) return;
   aiVideoState.initialized = true;
 
-  // STEP 1: Video Type Selection
-  const videoTypeCards = $$(".video-type-card", $("aivVideoTypesGrid"));
-  videoTypeCards.forEach((card) => {
-    card.addEventListener("click", () => {
-      videoTypeCards.forEach((c) => c.classList.remove("is-active"));
-      card.classList.add("is-active");
-      aiVideoState.videoType = card.dataset.type || "motion_cinematic";
+  // STEP 1: Video Format & Avatar Presenter Mode
+  const btnModeVisual = $("btnAivModeVisual");
+  const btnModeAvatar = $("btnAivModeAvatar");
+  const avatarBox = $("aivAvatarBox");
+  const avatarDropzone = $("aivAvatarDropzone");
+  const avatarFileInput = $("aivAvatarFileInput");
+  const avatarPreviewCard = $("aivAvatarPreviewCard");
+  const avatarThumb = $("aivAvatarThumb");
+  const avatarName = $("aivAvatarName");
+  const btnChangeAvatar = $("btnAivChangeAvatar");
+  const btnRemoveAvatar = $("btnAivRemoveAvatar");
+  const avatarLayoutSelect = $("aivAvatarLayout");
+
+  if (btnModeVisual && btnModeAvatar) {
+    btnModeVisual.addEventListener("click", () => {
+      btnModeVisual.classList.add("is-active");
+      btnModeAvatar.classList.remove("is-active");
+      aiVideoState.avatarMode = false;
+      if (avatarBox) avatarBox.hidden = true;
     });
-  });
+
+    btnModeAvatar.addEventListener("click", () => {
+      btnModeAvatar.classList.add("is-active");
+      btnModeVisual.classList.remove("is-active");
+      aiVideoState.avatarMode = true;
+      if (avatarBox) avatarBox.hidden = false;
+    });
+  }
+
+  if (avatarDropzone && avatarFileInput) {
+    avatarDropzone.addEventListener("click", () => avatarFileInput.click());
+  }
+  if (btnChangeAvatar && avatarFileInput) {
+    btnChangeAvatar.addEventListener("click", () => avatarFileInput.click());
+  }
+
+  if (avatarFileInput) {
+    avatarFileInput.addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        if (avatarThumb) avatarThumb.src = ev.target.result;
+        if (avatarName) avatarName.textContent = file.name.substring(0, 20);
+        if (avatarDropzone) avatarDropzone.hidden = true;
+        if (avatarPreviewCard) avatarPreviewCard.hidden = false;
+      };
+      reader.readAsDataURL(file);
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("asset_type", "avatar");
+        toast("Uploading avatar...", "info");
+        const resp = await fetch("/ai-video/upload-asset", { method: "POST", body: formData });
+        const data = await resp.json();
+        if (data && data.url) {
+          aiVideoState.avatarImageUrl = data.url;
+          aiVideoState.avatarLocalPath = data.local_path;
+          toast("Avatar photo ready for video!", "ok");
+        }
+      } catch (err) {
+        toast("Failed to upload avatar asset", "warn");
+      }
+    });
+  }
+
+  if (btnRemoveAvatar) {
+    btnRemoveAvatar.addEventListener("click", () => {
+      aiVideoState.avatarImageUrl = "";
+      aiVideoState.avatarLocalPath = "";
+      if (avatarFileInput) avatarFileInput.value = "";
+      if (avatarDropzone) avatarDropzone.hidden = false;
+      if (avatarPreviewCard) avatarPreviewCard.hidden = true;
+      toast("Avatar removed.", "info");
+    });
+  }
+
+  if (avatarLayoutSelect) {
+    avatarLayoutSelect.addEventListener("change", () => {
+      aiVideoState.avatarLayout = avatarLayoutSelect.value;
+    });
+  }
 
   // STEP 2: Niche & Category Selection
   const nicheChips = $$(".niche-chip", $("aivNichesGrid"));
@@ -3870,21 +4099,61 @@ function initAiVideoStudio() {
     });
   });
 
-  // Character description input
-  const charInput = $("aivCharacterDesc");
-  if (charInput) {
-    charInput.addEventListener("input", () => {
-      aiVideoState.characterDesc = charInput.value.trim();
+  // Multiple Characters Setup
+  on("btnAivAddChar", "click", () => {
+    aiVideoState.characters.push({
+      id: "char_" + Date.now(),
+      name: "",
+      traits: "",
+      imageUrl: "",
+      localPath: ""
     });
-  }
+    renderAivCharacters();
+  });
+  renderAivCharacters();
 
-  // Voice selector
-  const voiceSelect = $("aivVoiceSelect");
-  if (voiceSelect) {
-    voiceSelect.addEventListener("change", () => {
-      aiVideoState.voice = voiceSelect.value;
-    });
-  }
+  // Dual Voice Selection Setup (Free & Premium)
+  on("btnAivTabFreeVoice", "click", () => {
+    aiVideoState.voiceEngine = "edgetts";
+    aiVideoState.voice = aiVideoState.selectedVoice ? aiVideoState.selectedVoice.id : "ur-PK-AsadNeural";
+    updateAivSelectedVoiceUI();
+  });
+
+  on("btnAivTabPremiumVoice", "click", () => {
+    aiVideoState.voiceEngine = "kokoro";
+    aiVideoState.voice = aiVideoState.selectedKokoroVoice ? aiVideoState.selectedKokoroVoice.id : "am_adam";
+    updateAivSelectedVoiceUI();
+  });
+
+  // Browse modals triggers
+  on("aivFreeVoiceCardTrigger", "click", () => openVoiceLibraryModal("free", "aivideo"));
+  on("btnAivBrowseFreeVoices", "click", (e) => {
+    e.stopPropagation();
+    openVoiceLibraryModal("free", "aivideo");
+  });
+
+  on("aivPremiumVoiceCardTrigger", "click", () => openVoiceLibraryModal("premium", "aivideo"));
+  on("btnAivBrowsePremiumVoices", "click", (e) => {
+    e.stopPropagation();
+    openVoiceLibraryModal("premium", "aivideo");
+  });
+
+  // Audition audio samples
+  on("btnAivPreviewVoiceAudio", "click", (e) => {
+    e.stopPropagation();
+    if (aiVideoState.selectedVoice) {
+      playVoicePreviewAudio(aiVideoState.selectedVoice);
+    }
+  });
+
+  on("btnAivPreviewKokoroAudio", "click", (e) => {
+    e.stopPropagation();
+    if (aiVideoState.selectedKokoroVoice) {
+      playKokoroAudition(aiVideoState.selectedKokoroVoice);
+    }
+  });
+
+  updateAivSelectedVoiceUI();
 
   // Subtitle style
   const subSelect = $("aivSubtitleStyle");
@@ -3935,12 +4204,14 @@ function initAiVideoStudio() {
     try {
       const res = await jpost("/ai-video/storyboard", {
         script: script,
-        video_type: aiVideoState.videoType,
+        avatar_mode: aiVideoState.avatarMode,
+        avatar_image_url: aiVideoState.avatarImageUrl,
+        avatar_layout: aiVideoState.avatarLayout,
+        characters: aiVideoState.characters,
         niche: aiVideoState.niche,
         custom_niche_text: aiVideoState.customNicheText,
         style: aiVideoState.style,
-        custom_style_prompt: aiVideoState.customStylePrompt,
-        character_desc: aiVideoState.characterDesc
+        custom_style_prompt: aiVideoState.customStylePrompt
       });
       if (res && res.scenes) {
         aiVideoState.scenes = res.scenes;
@@ -4093,13 +4364,16 @@ async function startAiVideoGeneration() {
   try {
     const res = await jpost("/ai-video/generate-full", {
       script: script,
-      video_type: aiVideoState.videoType,
+      avatar_mode: aiVideoState.avatarMode,
+      avatar_image_url: aiVideoState.avatarImageUrl,
+      avatar_layout: aiVideoState.avatarLayout,
+      characters: aiVideoState.characters,
+      aspect_ratio: aiVideoState.aspectRatio,
       niche: aiVideoState.niche,
       custom_niche_text: aiVideoState.customNicheText,
-      aspect_ratio: aiVideoState.aspectRatio,
       style: aiVideoState.style,
       custom_style_prompt: aiVideoState.customStylePrompt,
-      character_desc: aiVideoState.characterDesc,
+      voice_engine: aiVideoState.voiceEngine,
       voice_id: aiVideoState.voice,
       speed: aiVideoState.speed,
       subtitles_enabled: aiVideoState.subtitleStyle !== "none",

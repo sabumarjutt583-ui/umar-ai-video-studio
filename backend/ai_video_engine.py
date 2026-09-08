@@ -296,11 +296,16 @@ def split_script_into_scenes_rule_based(
     video_type: str = "motion_cinematic",
     niche: str = "history_mystery",
     custom_niche_text: str = "",
-    custom_style_prompt: str = ""
+    custom_style_prompt: str = "",
+    characters: Optional[List[Dict[str, Any]]] = None,
+    avatar_mode: bool = False,
+    avatar_image_url: str = "",
+    avatar_layout: str = "full_presenter"
 ) -> List[Dict[str, Any]]:
     """
     Intelligently breaks script into 4-6 second visual scenes without cutting sentences.
-    Generates rich, contextual visual prompts tailored to Video Type, Niche, and Visual Style.
+    Generates rich, contextual visual prompts tailored to Video Type, Niche, Visual Style,
+    Avatar Presenter Mode, and Consistent Multi-Characters.
     """
     if custom_style_prompt and custom_style_prompt.strip():
         anchor = custom_style_prompt.strip()
@@ -370,15 +375,45 @@ def split_script_into_scenes_rule_based(
     if current_group:
         scene_texts.append(" ".join(current_group))
 
+    total_scenes_cnt = len(scene_texts)
+
     # Build scene objects
     scenes = []
     for idx, stext in enumerate(scene_texts):
         motion = CAMERA_MOTIONS[idx % len(CAMERA_MOTIONS)]
 
+        # Determine if this scene is an avatar scene
+        is_avatar = False
+        if avatar_mode:
+            if avatar_layout == "full_presenter":
+                is_avatar = True
+            elif avatar_layout == "hook_outro":
+                is_avatar = (idx == 0 or idx == total_scenes_cnt - 1)
+            elif avatar_layout == "broll_hybrid":
+                is_avatar = (idx % 2 == 0)
+            else:
+                is_avatar = True
+
         # Synthesize visual prompt
         prompt_parts = []
-        if character_desc and character_desc.strip():
-            prompt_parts.append(f"Featuring {character_desc.strip()}")
+        if is_avatar:
+            prompt_parts.append("Talking Avatar presenter facing directly at camera, expressive narration portrait")
+        else:
+            if characters and len(characters) > 0:
+                char_strs = []
+                for c in characters:
+                    c_name = c.get("name", "").strip()
+                    c_traits = c.get("traits", "").strip()
+                    if c_name and c_traits:
+                        char_strs.append(f"{c_name} ({c_traits})")
+                    elif c_name:
+                        char_strs.append(c_name)
+                    elif c_traits:
+                        char_strs.append(c_traits)
+                if char_strs:
+                    prompt_parts.append("Featuring " + "; ".join(char_strs))
+            elif character_desc and character_desc.strip():
+                prompt_parts.append(f"Featuring {character_desc.strip()}")
 
         # Clean words for prompt idea
         words = re.findall(r'\b[A-Za-z0-9\'-]+\b', stext)
@@ -388,7 +423,7 @@ def split_script_into_scenes_rule_based(
         else:
             prompt_parts.append(f"Scene illustrating: {stext[:80]}")
 
-        if type_cue:
+        if type_cue and not is_avatar:
             prompt_parts.append(type_cue)
         if niche_cue:
             prompt_parts.append(niche_cue)
@@ -402,6 +437,7 @@ def split_script_into_scenes_rule_based(
             "text": stext,
             "prompt": full_prompt,
             "motion": motion,
+            "is_avatar_scene": is_avatar,
             "image_url": None,
             "local_image_path": None,
             "start": 0.0,
@@ -420,6 +456,10 @@ async def breakdown_script_with_gemini_or_fallback(
     niche: str = "history_mystery",
     custom_niche_text: str = "",
     custom_style_prompt: str = "",
+    characters: Optional[List[Dict[str, Any]]] = None,
+    avatar_mode: bool = False,
+    avatar_image_url: str = "",
+    avatar_layout: str = "full_presenter",
     gemini_key: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """
@@ -435,7 +475,11 @@ async def breakdown_script_with_gemini_or_fallback(
             video_type=video_type,
             niche=niche,
             custom_niche_text=custom_niche_text,
-            custom_style_prompt=custom_style_prompt
+            custom_style_prompt=custom_style_prompt,
+            characters=characters,
+            avatar_mode=avatar_mode,
+            avatar_image_url=avatar_image_url,
+            avatar_layout=avatar_layout
         )
 
     if custom_style_prompt and custom_style_prompt.strip():
@@ -726,6 +770,11 @@ async def run_ai_video_pipeline(
     niche: str = "history_mystery",
     custom_niche_text: str = "",
     custom_style_prompt: str = "",
+    characters: Optional[List[Dict[str, Any]]] = None,
+    avatar_mode: bool = False,
+    avatar_image_url: str = "",
+    avatar_layout: str = "full_presenter",
+    voice_engine: str = "edgetts",
     voice_id: str = "ur-PK-AsadNeural",
     speed: float = 1.0,
     pitch: int = 0,
@@ -737,9 +786,9 @@ async def run_ai_video_pipeline(
 ) -> Dict[str, Any]:
     """
     Executes the entire end-to-end Script-to-Video pipeline:
-    1. Scene Breakdown
-    2. Edge-TTS Audio & Word Timestamps
-    3. FLUX.1 4K Visual Generation
+    1. Scene Breakdown (with Avatar Mode & Multi-Characters)
+    2. Neural Voiceover & Word Timestamps (Edge-TTS or Kokoro-82M Studio HD)
+    3. Visual Generation / Avatar Image Integration
     4. Ken Burns 3D Assembly + Subtitle Burning
     """
     os.makedirs(session_upload_dir, exist_ok=True)
@@ -759,6 +808,10 @@ async def run_ai_video_pipeline(
             niche=niche,
             custom_niche_text=custom_niche_text,
             custom_style_prompt=custom_style_prompt,
+            characters=characters,
+            avatar_mode=avatar_mode,
+            avatar_image_url=avatar_image_url,
+            avatar_layout=avatar_layout,
             gemini_key=gemini_key
         )
 
@@ -766,22 +819,48 @@ async def run_ai_video_pipeline(
         job_id,
         20,
         "voice",
-        f"Synthesizing neural voiceover with {voice_id}...",
+        f"Synthesizing voiceover with {voice_id} ({'Kokoro-82M' if voice_engine == 'kokoro' else 'Edge-TTS'})...",
         result={"scenes": scenes}
     )
 
-    # Stage 2: Voiceover & Timestamp Synthesis
-    tts_result = await tts_engine.synthesize_speech(
-        text=script_text,
-        voice=voice_id,
-        speed=speed,
-        pitch=pitch,
-        output_dir=session_upload_dir,
-        file_prefix=f"aivideo_voice_{job_id}"
-    )
+    # Stage 2: Voiceover & Timestamp Synthesis (Edge-TTS or Kokoro Studio HD)
+    is_kokoro = (voice_engine == "kokoro") or voice_id.startswith(("af_", "am_", "bf_", "bm_", "hf_", "hm_", "jf_", "jm_", "zf_", "zm_", "ef_", "em_", "ff_", "if_", "pf_")) or voice_id in ("af",)
+    
+    if is_kokoro:
+        try:
+            from backend import kokoro_engine
+        except ImportError:
+            import kokoro_engine
+        try:
+            tts_result = await kokoro_engine.synthesize_kokoro_speech(
+                text=script_text,
+                voice_id=voice_id,
+                speed=speed,
+                output_dir=session_upload_dir,
+                file_prefix=f"aivideo_voice_{job_id}"
+            )
+        except Exception as e:
+            logger.warning(f"Kokoro synthesis failed ({e}), falling back to Edge-TTS.")
+            tts_result = await tts_engine.synthesize_speech(
+                text=script_text,
+                voice="ur-PK-AsadNeural" if any(ord(c) > 127 for c in script_text[:50]) else "en-US-ChristopherNeural",
+                speed=speed,
+                pitch=pitch,
+                output_dir=session_upload_dir,
+                file_prefix=f"aivideo_voice_{job_id}"
+            )
+    else:
+        tts_result = await tts_engine.synthesize_speech(
+            text=script_text,
+            voice=voice_id,
+            speed=speed,
+            pitch=pitch,
+            output_dir=session_upload_dir,
+            file_prefix=f"aivideo_voice_{job_id}"
+        )
 
     voice_audio_path = tts_result["audio_path"]
-    words = tts_result["words"]
+    words = tts_result.get("words") or []
     total_audio_duration = tts_result["duration"]
 
     # Align scenes to audio timing
@@ -791,35 +870,68 @@ async def run_ai_video_pipeline(
         job_id,
         35,
         "images",
-        f"Generating 4K consistent visuals with Pollinations FLUX.1 (0/{len(scenes)})...",
+        f"Preparing consistent visuals (0/{len(scenes)})...",
         result={"scenes": scenes, "audio_url": f"/files/{session_id}/{tts_result['audio_filename']}"}
     )
 
-    # Stage 3: Image Generation via FLUX.1
-    completed_img_count = 0
+    # Stage 3: Image Generation & Avatar Image Placement
+    # Resolve local avatar path if avatar_mode is enabled
+    avatar_local_path = None
+    if avatar_mode and avatar_image_url:
+        if avatar_image_url.startswith("/files/"):
+            rel_sub = avatar_image_url[len("/files/"):]
+            candidate_path = os.path.join(os.path.dirname(session_upload_dir), rel_sub)
+            if os.path.exists(candidate_path):
+                avatar_local_path = candidate_path
+        elif os.path.exists(avatar_image_url):
+            avatar_local_path = avatar_image_url
+
+    # Check which scenes need FLUX.1 generation vs using uploaded avatar
+    scenes_to_generate = []
+    for s in scenes:
+        if s.get("is_avatar_scene") and avatar_local_path:
+            s["local_image_path"] = avatar_local_path
+            s["image_url"] = avatar_image_url
+        else:
+            scenes_to_generate.append(s)
+
+    completed_img_count = len(scenes) - len(scenes_to_generate)
 
     def on_image_done(idx: int, total: int, scene_obj: Dict[str, Any]):
         nonlocal completed_img_count
         completed_img_count += 1
-        pct = 35 + int((completed_img_count / total) * 35)  # 35% -> 70%
+        pct = 35 + int((completed_img_count / len(scenes)) * 35)  # 35% -> 70%
         set_ai_video_progress(
             job_id,
             pct,
             "images",
-            f"Generating 4K consistent visuals with FLUX.1 ({completed_img_count}/{total})...",
+            f"Generating consistent visuals ({completed_img_count}/{len(scenes)})...",
             result={"scenes": scenes}
         )
 
-    # Generate images
-    images_dir = os.path.join(session_upload_dir, "scenes")
-    scenes = await generate_scene_images_batch(
-        scenes=scenes,
-        aspect_ratio=aspect_ratio,
-        output_dir=images_dir,
-        session_id=f"{session_id}/scenes",
-        base_seed=abs(hash(character_desc or script_text[:30])) % 999999,
-        progress_callback=on_image_done
-    )
+    if scenes_to_generate:
+        images_dir = os.path.join(session_upload_dir, "scenes")
+        generated_scenes = await generate_scene_images_batch(
+            scenes=scenes_to_generate,
+            aspect_ratio=aspect_ratio,
+            output_dir=images_dir,
+            session_id=f"{session_id}/scenes",
+            base_seed=abs(hash(character_desc or script_text[:30])) % 999999,
+            progress_callback=on_image_done
+        )
+        gen_map = {sc["id"]: sc for sc in generated_scenes}
+        for s in scenes:
+            if s["id"] in gen_map:
+                s["local_image_path"] = gen_map[s["id"]].get("local_image_path")
+                s["image_url"] = gen_map[s["id"]].get("image_url")
+    else:
+        set_ai_video_progress(
+            job_id,
+            70,
+            "images",
+            "Avatar presenter scenes prepared with custom avatar!",
+            result={"scenes": scenes}
+        )
 
     set_ai_video_progress(
         job_id,

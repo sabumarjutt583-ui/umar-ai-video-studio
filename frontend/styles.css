@@ -1675,21 +1675,18 @@ table.grid td.rownum { color: var(--text-dim); font-variant-numeric: tabular-num
   margin-bottom: 0.35rem;
 }
 
-/* Step 1: Video Type Grid */
-.video-type-grid {
+/* Step 1: Avatar Mode Options */
+.avatar-mode-options {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  max-height: 220px;
-  overflow-y: auto;
-  padding-right: 0.2rem;
 }
 
-.video-type-card {
+.avatar-mode-card {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  padding: 0.48rem 0.65rem;
+  padding: 0.5rem 0.7rem;
   background: rgba(255, 255, 255, 0.025);
   border: 1px solid var(--line, #334155);
   border-radius: 8px;
@@ -1699,35 +1696,199 @@ table.grid td.rownum { color: var(--text-dim); font-variant-numeric: tabular-num
   color: var(--text, #f8fafc);
 }
 
-.video-type-card:hover {
+.avatar-mode-card:hover {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(99, 102, 241, 0.4);
 }
 
-.video-type-card.is-active {
+.avatar-mode-card.is-active {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(139, 92, 246, 0.18));
   border-color: #6366f1;
   box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
 }
 
-.vt-icon {
+.am-icon {
   font-size: 1.25rem;
   flex-shrink: 0;
 }
 
-.vt-info {
+.am-info {
   display: flex;
   flex-direction: column;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
-.vt-info strong {
+.am-info strong {
   font-size: 0.8rem;
 }
 
-.vt-info small {
+.am-info small {
   font-size: 0.67rem;
   color: var(--text-dim, #94a3b8);
+}
+
+/* Avatar Upload & Preview Box */
+.avatar-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0.6rem;
+  background: rgba(99, 102, 241, 0.04);
+  border: 1.5px dashed rgba(99, 102, 241, 0.4);
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.2s ease;
+  gap: 0.2rem;
+}
+
+.avatar-dropzone:hover {
+  background: rgba(99, 102, 241, 0.09);
+  border-color: #6366f1;
+}
+
+.avatar-preview-card {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line, #334155);
+  border-radius: 8px;
+}
+
+.avatar-preview-img {
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  background: #111;
+  flex-shrink: 0;
+}
+
+.avatar-preview-info {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Character Cards */
+.character-card-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--line, #334155);
+  border-radius: 8px;
+  transition: border-color 0.2s ease;
+}
+
+.character-card-item:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+.char-top-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.char-avatar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px dashed rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  cursor: pointer;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.char-avatar-btn:hover {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.char-avatar-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.char-name-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--line, #334155);
+  border-radius: 6px;
+  color: #fff;
+  padding: 0.25rem 0.45rem;
+  font-size: 0.75rem;
+}
+
+.char-delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim, #94a3b8);
+  cursor: pointer;
+  padding: 0.2rem 0.35rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+}
+
+.char-delete-btn:hover {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.char-traits-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--line, #334155);
+  border-radius: 6px;
+  color: var(--text, #f8fafc);
+  padding: 0.25rem 0.45rem;
+  font-size: 0.72rem;
+}
+
+/* AI Video Voice Tabs */
+.aiv-voice-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.2rem;
+  border-radius: 8px;
+  border: 1px solid var(--line, #334155);
+}
+
+.aiv-vtab {
+  background: transparent;
+  border: none;
+  color: var(--text-dim, #94a3b8);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.35rem 0.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.18s ease;
+}
+
+.aiv-vtab:hover {
+  color: #fff;
+}
+
+.aiv-vtab.is-active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.3));
+  color: #fff;
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.25);
 }
 
 /* Step 2: Niche Chips Grid */

@@ -1550,62 +1550,64 @@
       <!-- ================= LEFT: STEP-BY-STEP WORKFLOW ================= -->
       <aside class="ai-video-sidebar">
 
-        <!-- STEP 1: VIDEO TYPE -->
+        <!-- STEP 1: FORMAT & AVATAR MODE -->
         <div class="sidebar-card">
           <div class="step-card-header">
             <span class="step-num-badge">1</span>
-            <label class="section-label" style="margin:0">Video Type</label>
+            <label class="section-label" style="margin:0">Video Format & Avatar</label>
           </div>
-          <div class="video-type-grid" id="aivVideoTypesGrid">
-            <button class="video-type-card is-active" data-type="motion_cinematic" type="button">
-              <span class="vt-icon">🎬</span>
-              <div class="vt-info">
-                <strong>Cinematic Motion</strong>
-                <small>Ken Burns 3D camera pan/zoom</small>
+          
+          <!-- Mode Choice: B-Roll vs Avatar Presenter -->
+          <div class="avatar-mode-options" id="aivModeChoiceGrid">
+            <button class="avatar-mode-card is-active" id="btnAivModeVisual" data-mode="visual" type="button">
+              <span class="am-icon">🎬</span>
+              <div class="am-info">
+                <strong>Visual B-Roll Scenes</strong>
+                <small>Story visuals & dynamic camera</small>
               </div>
             </button>
-            <button class="video-type-card" data-type="animation_2d" type="button">
-              <span class="vt-icon">✏️</span>
-              <div class="vt-info">
-                <strong>2D Animation</strong>
-                <small>Vibrant cartoon & vector motion</small>
+            <button class="avatar-mode-card" id="btnAivModeAvatar" data-mode="avatar" type="button">
+              <span class="am-icon">🗣️</span>
+              <div class="am-info">
+                <strong>Talking Avatar / Presenter</strong>
+                <small>Upload face/avatar for video</small>
               </div>
             </button>
-            <button class="video-type-card" data-type="drama_story" type="button">
-              <span class="vt-icon">🎭</span>
-              <div class="vt-info">
-                <strong>Multi-Character Drama</strong>
-                <small>Dialogue mode with speaker cuts</small>
+          </div>
+
+          <!-- Avatar Upload Box (Expands when Avatar Mode selected) -->
+          <div class="avatar-upload-section" id="aivAvatarBox" hidden style="margin-top:0.75rem">
+            <input type="file" id="aivAvatarFileInput" accept="image/*" style="display:none">
+            
+            <!-- When NO avatar is uploaded yet -->
+            <div class="avatar-dropzone" id="aivAvatarDropzone" style="cursor:pointer">
+              <span style="font-size:1.6rem">👤</span>
+              <strong style="font-size:0.78rem">Click to Upload Avatar Photo</strong>
+              <small style="color:var(--text-dim);font-size:0.67rem">JPG, PNG, WebP (Real face, cartoon, 3D character)</small>
+            </div>
+
+            <!-- When avatar IS uploaded -->
+            <div class="avatar-preview-card" id="aivAvatarPreviewCard" hidden>
+              <img id="aivAvatarThumb" src="" alt="Avatar Preview" class="avatar-preview-img">
+              <div class="avatar-preview-info">
+                <strong id="aivAvatarName" style="font-size:0.8rem">Custom Avatar</strong>
+                <small style="color:#10b981;font-size:0.68rem;display:block">✓ Ready for Video</small>
+                <div style="display:flex;gap:0.4rem;margin-top:0.35rem">
+                  <button type="button" class="btn btn-ghost btn-xs" id="btnAivChangeAvatar" style="font-size:0.68rem;padding:0.15rem 0.45rem">Change</button>
+                  <button type="button" class="btn btn-ghost btn-xs" id="btnAivRemoveAvatar" style="font-size:0.68rem;padding:0.15rem 0.45rem;color:#f87171">Remove</button>
+                </div>
               </div>
-            </button>
-            <button class="video-type-card" data-type="talking_avatar" type="button">
-              <span class="vt-icon">🗣️</span>
-              <div class="vt-info">
-                <strong>Talking Avatar</strong>
-                <small>Character portrait presentation</small>
-              </div>
-            </button>
-            <button class="video-type-card" data-type="living_motion" type="button">
-              <span class="vt-icon">🌊</span>
-              <div class="vt-info">
-                <strong>AI Living Motion</strong>
-                <small>Living video environment motion</small>
-              </div>
-            </button>
-            <button class="video-type-card" data-type="stock_documentary" type="button">
-              <span class="vt-icon">🎞️</span>
-              <div class="vt-info">
-                <strong>Stock Documentary</strong>
-                <small>Real footage realism style</small>
-              </div>
-            </button>
-            <button class="video-type-card" data-type="kids_animation" type="button">
-              <span class="vt-icon">🧸</span>
-              <div class="vt-info">
-                <strong>3D Kids Story</strong>
-                <small>Disney Pixar cartoon adventure</small>
-              </div>
-            </button>
+            </div>
+
+            <!-- Avatar Scene Appearance Options -->
+            <div style="margin-top:0.6rem">
+              <label class="section-sublabel" style="font-size:0.7rem;margin-bottom:0.25rem">Avatar Scenes In Video:</label>
+              <select id="aivAvatarLayout" class="select" style="width:100%;font-size:0.75rem">
+                <option value="full_presenter" selected>Full Presenter (Avatar in every scene)</option>
+                <option value="hook_outro">Hook & Outro Only (Avatar at start & end)</option>
+                <option value="broll_hybrid">Dynamic Hybrid (Alternates Avatar & B-Roll)</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -1760,22 +1762,80 @@
             </button>
           </div>
 
-          <div class="card-head-simple" style="margin-bottom:0.3rem">
-            <label class="section-sublabel" style="margin-bottom:0">Character Lock</label>
-            <span class="badge" style="background:rgba(99,102,241,0.2);color:#a5b4fc;font-size:0.65rem">Optional</span>
-          </div>
-          <input type="text" id="aivCharacterDesc" class="input-text" placeholder="e.g. Young detective with black trench coat" style="width:100%;font-size:0.8rem;margin-bottom:0.7rem">
+          <!-- Consistent Characters Manager (Multiple Support) -->
+          <div class="sidebar-subcard" style="margin-bottom:0.8rem;background:rgba(255,255,255,0.02);padding:0.6rem;border-radius:8px;border:1px solid var(--line,#334155)">
+            <div class="card-head-simple" style="margin-bottom:0.4rem;display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <label class="section-sublabel" style="margin:0;font-size:0.75rem">👥 Main Characters</label>
+                <small style="color:var(--text-dim);font-size:0.65rem;display:block">Upload & lock character faces/traits</small>
+              </div>
+              <button class="btn btn-ghost btn-xs" id="btnAivAddChar" type="button" style="color:#a5b4fc;border-color:rgba(99,102,241,0.4);font-weight:600;font-size:0.7rem">
+                + Add Character
+              </button>
+            </div>
 
-          <label class="section-sublabel">Narration Voice</label>
-          <select id="aivVoiceSelect" class="select" style="width:100%;font-size:0.82rem;margin-bottom:0.7rem">
-            <option value="ur-PK-AsadNeural" selected>🇵🇰 Asad Neural (Urdu Male - Storyteller)</option>
-            <option value="ur-PK-UzmaNeural">🇵🇰 Uzma Neural (Urdu Female - Narrator/News)</option>
-            <option value="en-US-ChristopherNeural">🇺🇸 Christopher Neural (English Male - Deep)</option>
-            <option value="en-US-JennyNeural">🇺🇸 Jenny Neural (English Female - Natural)</option>
-            <option value="hi-IN-MadhurNeural">🇮🇳 Madhur Neural (Hindi Male)</option>
-            <option value="hi-IN-SwaraNeural">🇮🇳 Swara Neural (Hindi Female)</option>
-            <option value="ar-SA-HamedNeural">🇸🇦 Hamed Neural (Arabic Male)</option>
-          </select>
+            <!-- Character Cards List -->
+            <div class="characters-list-wrap" id="aivCharactersList" style="display:flex;flex-direction:column;gap:0.45rem">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Dual Voice Selection (Free & Premium Studio HD) -->
+          <div class="aiv-voice-box" style="margin-bottom:0.8rem">
+            <label class="section-sublabel" style="margin-bottom:0.35rem">🎙️ Narration Voice</label>
+            
+            <!-- Voice Engine Switcher Tabs -->
+            <div class="aiv-voice-tabs" id="aivVoiceEngineTabs" style="margin-bottom:0.5rem">
+              <button class="aiv-vtab is-active" id="btnAivTabFreeVoice" data-engine="edgetts" type="button">
+                <span>🌐 Free (400+)</span>
+              </button>
+              <button class="aiv-vtab" id="btnAivTabPremiumVoice" data-engine="kokoro" type="button">
+                <span>🌟 Studio HD (47+)</span>
+              </button>
+            </div>
+
+            <!-- FREE VOICE CARD (Edge-TTS) -->
+            <div class="aiv-voice-card-wrap" id="aivFreeVoiceCardBox">
+              <div class="card-head-simple" style="margin-bottom:0.3rem">
+                <span style="font-size:0.68rem;font-weight:700;color:var(--text-dim)">SELECTED FREE VOICE</span>
+                <button class="btn btn-ghost btn-xs" id="btnAivBrowseFreeVoices" type="button" style="color:#c4b5fd;font-weight:600;font-size:0.68rem">🔍 Filter (400+) →</button>
+              </div>
+              <div class="voice-selector-card-btn" id="aivFreeVoiceCardTrigger" title="Click to browse free voices">
+                <div class="vpc-info">
+                  <span class="vpc-flag" id="aivVpcFlag">🇵🇰</span>
+                  <div>
+                    <strong id="aivVpcName" style="font-size:0.8rem">Asad Neural</strong>
+                    <small id="aivVpcDetails" style="font-size:0.67rem;display:block">Urdu (Pakistan) • Male • Storyteller</small>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.35rem">
+                  <button class="icon-btn" id="btnAivPreviewVoiceAudio" type="button" title="Sample Audio" style="width:26px;height:26px;font-size:0.75rem">▶</button>
+                  <span style="color:var(--text-dim);font-size:0.8rem">❯</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- PREMIUM STUDIO HD VOICE CARD (Kokoro-TTS) -->
+            <div class="aiv-voice-card-wrap" id="aivPremiumVoiceCardBox" hidden>
+              <div class="card-head-simple" style="margin-bottom:0.3rem">
+                <span style="font-size:0.68rem;font-weight:700;color:#10b981">SELECTED STUDIO HD VOICE</span>
+                <button class="btn btn-ghost btn-xs" id="btnAivBrowsePremiumVoices" type="button" style="color:#6ee7b7;font-weight:600;font-size:0.68rem">🔍 Filter (47+) →</button>
+              </div>
+              <div class="voice-selector-card-btn" id="aivPremiumVoiceCardTrigger" title="Click to browse Studio HD voices" style="border-color:rgba(16,185,129,0.3)">
+                <div class="vpc-info">
+                  <span class="vpc-flag" id="aivKokoroVpcFlag">🇺🇸</span>
+                  <div>
+                    <strong id="aivKokoroVpcName" style="font-size:0.8rem">Adam (Studio)</strong>
+                    <small id="aivKokoroVpcDetails" style="font-size:0.67rem;display:block">United States • English • Male • Studio HD</small>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.35rem">
+                  <button class="icon-btn" id="btnAivPreviewKokoroAudio" type="button" title="Sample Audio" style="width:26px;height:26px;font-size:0.75rem">▶</button>
+                  <span style="color:var(--text-dim);font-size:0.8rem">❯</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <label class="section-sublabel">Subtitle Style</label>
           <select id="aivSubtitleStyle" class="select" style="width:100%;font-size:0.82rem;margin-bottom:0.7rem">
@@ -1799,7 +1859,7 @@
           <span class="vcp-icon">⚡</span>
           <div class="vcp-text">
             <strong>100% Free & Unlimited</strong>
-            <small>Pollinations FLUX.1 + Edge-TTS (0 API Keys)</small>
+            <small>FLUX.1 + Edge-TTS (400+) + Kokoro-82M (47+)</small>
           </div>
         </div>
       </aside>

@@ -1879,6 +1879,24 @@ def ai_video_presets():
     }
 
 
+@app.post("/ai-video/upload-asset")
+async def ai_video_upload_asset(file: UploadFile = File(...), asset_type: str = Form("avatar")):
+    """Uploads an avatar photo or character reference image."""
+    asset_dir = os.path.join(UPLOAD_DIR, "ai_video")
+    os.makedirs(asset_dir, exist_ok=True)
+    ext = os.path.splitext(file.filename or "")[1].lower() or ".png"
+    clean_name = f"{asset_type}_{uuid.uuid4().hex[:8]}{ext}"
+    dest_path = os.path.join(asset_dir, clean_name)
+    save_upload(file, dest_path)
+    url = f"/files/ai_video/{clean_name}"
+    return {
+        "status": "ok",
+        "url": url,
+        "local_path": dest_path,
+        "filename": clean_name
+    }
+
+
 @app.post("/ai-video/storyboard")
 async def ai_video_storyboard(payload: dict = Body(...)):
     """Breaks down a script into previewable scene prompts."""
@@ -1889,6 +1907,10 @@ async def ai_video_storyboard(payload: dict = Body(...)):
     niche = payload.get("niche", "history_mystery")
     custom_niche_text = payload.get("custom_niche_text", "").strip()
     custom_style_prompt = payload.get("custom_style_prompt", "").strip()
+    characters = payload.get("characters") or []
+    avatar_mode = bool(payload.get("avatar_mode", False))
+    avatar_image_url = payload.get("avatar_image_url", "").strip()
+    avatar_layout = payload.get("avatar_layout", "full_presenter")
     gemini_key = payload.get("gemini_key")
     if not script_text:
         raise HTTPException(status_code=400, detail="Script text cannot be empty.")
@@ -1901,6 +1923,10 @@ async def ai_video_storyboard(payload: dict = Body(...)):
         niche=niche,
         custom_niche_text=custom_niche_text,
         custom_style_prompt=custom_style_prompt,
+        characters=characters,
+        avatar_mode=avatar_mode,
+        avatar_image_url=avatar_image_url,
+        avatar_layout=avatar_layout,
         gemini_key=gemini_key
     )
     return {"status": "ok", "scenes": scenes, "count": len(scenes)}
@@ -1932,6 +1958,11 @@ async def ai_video_generate_full(payload: dict = Body(...)):
     niche = payload.get("niche", "history_mystery")
     custom_niche_text = payload.get("custom_niche_text", "").strip()
     custom_style_prompt = payload.get("custom_style_prompt", "").strip()
+    characters = payload.get("characters") or []
+    avatar_mode = bool(payload.get("avatar_mode", False))
+    avatar_image_url = payload.get("avatar_image_url", "").strip()
+    avatar_layout = payload.get("avatar_layout", "full_presenter")
+    voice_engine = payload.get("voice_engine", "edgetts")
     voice_id = payload.get("voice_id", "ur-PK-AsadNeural")
     speed = float(payload.get("speed", 1.0))
     pitch = int(payload.get("pitch", 0))
@@ -1958,6 +1989,11 @@ async def ai_video_generate_full(payload: dict = Body(...)):
         "niche": niche,
         "custom_niche_text": custom_niche_text,
         "custom_style_prompt": custom_style_prompt,
+        "characters": characters,
+        "avatar_mode": avatar_mode,
+        "avatar_image_url": avatar_image_url,
+        "avatar_layout": avatar_layout,
+        "voice_engine": voice_engine,
         "voice_id": voice_id,
         "speed": speed,
         "pitch": pitch,
