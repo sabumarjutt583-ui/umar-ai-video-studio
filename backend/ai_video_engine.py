@@ -592,30 +592,31 @@ async def generate_single_scene_image(
     seed: int
 ) -> bool:
     """
-    Downloads an AI image from Pollinations FLUX.1 with fallback to turbo model.
+    Downloads an AI image from Pollinations with multiple free models and robust exponential retry backoff.
     """
     width, height = get_flux_dimensions(aspect_ratio)
     encoded_prompt = urllib.parse.quote_plus(prompt.strip())
 
-    # Primary attempt: FLUX.1 model
-    primary_url = (
-        f"https://image.pollinations.ai/prompt/{encoded_prompt}"
-        f"?width={width}&height={height}&model=flux&seed={seed}&nologo=true"
-    )
+    # Free model candidates in order of preference
+    # 1. flux: Top quality photorealistic
+    # 2. turbo: Ultra-fast, highly responsive when flux has queue
+    # 3. default (no model param): Stable pollinations standard
+    model_sequence = ["flux", "turbo", ""]
 
-    # Fallback attempt: Turbo model (ultra-fast if FLUX is busy)
-    fallback_url = (
-        f"https://image.pollinations.ai/prompt/{encoded_prompt}"
-        f"?width={width}&height={height}&model=turbo&seed={seed}&nologo=true"
-    )
+    for attempt in range(len(model_sequence) * 2):
+        model_name = model_sequence[attempt % len(model_sequence)]
+        model_param = f"&model={model_name}" if model_name else ""
+        current_seed = (seed + attempt * 7) % 999999
 
-    urls_to_try = [primary_url, fallback_url]
+        attempt_url = (
+            f"https://image.pollinations.ai/prompt/{encoded_prompt}"
+            f"?width={width}&height={height}{model_param}&seed={current_seed}&nologo=true"
+        )
 
-    for attempt_url in urls_to_try:
         try:
             req = urllib.request.Request(
                 attempt_url,
-                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) UmarVideoStudio/10.0"}
+                headers={"User-Agent": f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) StudioClient/{100 + attempt}"}
             )
             loop = asyncio.get_event_loop()
             resp = await loop.run_in_executor(None, lambda: urllib.request.urlopen(req, timeout=35))
@@ -624,12 +625,17 @@ async def generate_single_scene_image(
                 if len(img_bytes) > 2048:
                     with open(save_path, "wb") as f_out:
                         f_out.write(img_bytes)
+                    logger.info(f"Scene {scene_idx} successfully generated ({len(img_bytes)} bytes, model={model_name or 'default'})")
                     return True
+        except urllib.error.HTTPError as he:
+            wait_time = 3.0 + (attempt * 1.5) if he.code == 429 else 1.5
+            logger.warning(f"Scene {scene_idx} attempt {attempt+1} got HTTP {he.code}, waiting {wait_time}s... ({he.reason})")
+            await asyncio.sleep(wait_time)
         except Exception as e:
-            logger.warning(f"Scene {scene_idx} image generation attempt failed: {e}")
-            await asyncio.sleep(1.0)
+            logger.warning(f"Scene {scene_idx} attempt {attempt+1} failed: {e}")
+            await asyncio.sleep(2.0)
 
-    # If both remote attempts fail, generate a solid color background with text fallback
+    # If all remote attempts fail, generate a solid color background with text fallback
     try:
         import subprocess
         dim = get_dimensions(aspect_ratio, "1080p")
@@ -652,11 +658,11 @@ async def generate_scene_images_batch(
     progress_callback=None
 ) -> List[Dict[str, Any]]:
     """
-    Generates high-res FLUX images for all scenes with concurrency and progress updates.
+    Generates high-res FLUX images for all scenes with sequential concurrency to prevent 429 rate-limits.
     """
     os.makedirs(output_dir, exist_ok=True)
     total = len(scenes)
-    sem = asyncio.Semaphore(2)  # 2 parallel requests to avoid rate limits
+    sem = asyncio.Semaphore(1)  # 1 at a time to avoid rate limits from free tier
 
     async def worker(idx: int, scene: Dict[str, Any]):
         filename = f"scene_{idx:03d}.jpg"
@@ -671,6 +677,7 @@ async def generate_scene_images_batch(
                 save_path=local_path,
                 seed=seed
             )
+            await asyncio.sleep(1.0)  # Gentle gap between scenes to keep API healthy
 
         if ok and os.path.exists(local_path):
             scene["local_image_path"] = local_path

@@ -19,6 +19,14 @@ function on(id, ev, fn) {
   if (node) node.addEventListener(ev, fn);
 }
 
+function resolveAssetUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:") || url.startsWith("blob:")) {
+    return url;
+  }
+  return API + (url.startsWith("/") ? url : "/" + url);
+}
+
 function el(tag, opts, children) {
   const node = document.createElement(tag);
   if (opts) {
@@ -3854,7 +3862,7 @@ function renderAivCharacters() {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("asset_type", "character");
-        const resp = await fetch("/ai-video/upload-asset", { method: "POST", body: formData });
+        const resp = await fetch(API + "/ai-video/upload-asset", { method: "POST", body: formData });
         const data = await resp.json();
         if (data && data.url) {
           char.imageUrl = data.url;
@@ -4003,7 +4011,7 @@ function initAiVideoStudio() {
         formData.append("file", file);
         formData.append("asset_type", "avatar");
         toast("Uploading avatar...", "info");
-        const resp = await fetch("/ai-video/upload-asset", { method: "POST", body: formData });
+        const resp = await fetch(API + "/ai-video/upload-asset", { method: "POST", body: formData });
         const data = await resp.json();
         if (data && data.url) {
           aiVideoState.avatarImageUrl = data.url;
@@ -4313,7 +4321,7 @@ function renderStoryboardScenes(scenes) {
     if (sc.image_url) {
       const img = el("img", {
         cls: "aiv-scene-thumb",
-        attrs: { src: sc.image_url, alt: `Scene ${idx + 1}` }
+        attrs: { src: resolveAssetUrl(sc.image_url), alt: `Scene ${idx + 1}` }
       });
       body.appendChild(img);
     } else {
@@ -4498,23 +4506,23 @@ function pollAiVideoProgress(jobId) {
 
           const player = $("aivVideoPlayer");
           if (player && job.result && job.result.video_url) {
-            player.src = job.result.video_url;
+            player.src = resolveAssetUrl(job.result.video_url);
             player.load();
           }
 
           const videoDl = $("aivDownloadVideoLink");
           if (videoDl && job.result && job.result.video_url) {
-            videoDl.href = job.result.video_url;
+            videoDl.href = resolveAssetUrl(job.result.video_url);
           }
 
           const audioDl = $("aivDownloadAudioLink");
           if (audioDl && job.result && job.result.audio_url) {
-            audioDl.href = job.result.audio_url;
+            audioDl.href = resolveAssetUrl(job.result.audio_url);
           }
 
           const srtDl = $("aivDownloadSrtLink");
           if (srtDl && job.result && job.result.srt_url) {
-            srtDl.href = job.result.srt_url;
+            srtDl.href = resolveAssetUrl(job.result.srt_url);
           }
 
           const meta = $("aivResultMeta");
