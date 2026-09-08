@@ -142,6 +142,12 @@
         <span>Dashboard</span>
       </button>
 
+      <button class="nav-item" id="navItemAiVideo" type="button">
+        <span class="nav-icon">🤖</span>
+        <span>AI Video Studio</span>
+        <span class="nav-badge-pill" style="background:linear-gradient(135deg, #6366f1, #8b5cf6);color:#fff">Auto 4K</span>
+      </button>
+
       <button class="nav-item" id="navItemNewProject" type="button">
         <span class="nav-icon">➕</span>
         <span>Create Project</span>
@@ -252,8 +258,23 @@
 
         <!-- Action Cards Grid -->
         <div class="action-cards-grid">
+          <!-- Card: AI Video Studio (Automated Script-to-Video) -->
+          <div class="action-card card-featured" style="background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(139,92,246,0.15));border:1px solid rgba(139,92,246,0.4)">
+            <div class="card-header-row">
+              <div class="card-icon-box" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff">🤖</div>
+              <span class="card-badge" style="background:#6366f1;color:#fff">1-CLICK AUTO 4K</span>
+            </div>
+            <div class="card-body">
+              <h3>AI Video Studio (Script to Video)</h3>
+              <p>Paste any narration script or story. Generates 4K consistent AI visuals (FLUX.1), neural speech with word-synced subtitles, and cinematic Ken Burns 3D motion into a complete MP4.</p>
+            </div>
+            <button class="btn btn-primary card-action-btn" id="welcomeBtnAiVideo" type="button" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 4px 15px rgba(99,102,241,0.4);border:none">
+              🤖 Open AI Video Studio ✨
+            </button>
+          </div>
+
           <!-- Card 1: Create New Video Project (Hero Action) -->
-          <div class="action-card card-featured">
+          <div class="action-card">
             <div class="card-header-row">
               <div class="card-icon-box">🚀</div>
               <span class="card-badge primary">Primary Action</span>
@@ -1505,7 +1526,292 @@
 
   </section> <!-- END #panelVoiceStudio -->
 
+  <!-- VIEW 6: AI VIDEO STUDIO (Phase 1: Automated Script-to-Video Engine) -->
+  <section class="view-panel" id="panelAiVideo" hidden>
+    <!-- AI Video Studio Header -->
+    <div class="ai-video-header">
+      <div class="ai-video-title-box">
+        <div class="ai-video-title-row">
+          <span class="ai-video-icon">🤖</span>
+          <div>
+            <h2 class="ai-video-title">AI Video Studio <span class="badge" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:0.75rem;padding:2px 8px">100% Free & Unlimited</span></h2>
+            <p class="ai-video-desc">Automated Script-to-Video Generator. Paste any script, pick your visual art style, and generate full 4K videos with AI visuals, voiceover, subtitles, and Ken Burns motion.</p>
+          </div>
+        </div>
+      </div>
+      <div class="ai-video-header-actions">
+        <button class="btn btn-ghost btn-sm" id="btnAiVideoToTimeline" type="button">🎬 Open Video Timeline</button>
+      </div>
+    </div>
 
+    <!-- AI Video Studio Main 3-Column Workbench -->
+    <div class="ai-video-grid">
+
+      <!-- ================= LEFT: SETTINGS & VISUAL STYLE ================= -->
+      <aside class="ai-video-sidebar">
+        <!-- Aspect Ratio Selection -->
+        <div class="sidebar-card">
+          <label class="section-label">📐 Aspect Ratio / Target Format</label>
+          <div class="aspect-toggle-group">
+            <button class="aspect-btn is-active" id="aivFormatVertical" data-aspect="9:16" type="button">
+              <span class="aspect-icon">📱</span>
+              <span class="aspect-name">9:16</span>
+              <small class="aspect-sub">Shorts / Reels</small>
+            </button>
+            <button class="aspect-btn" id="aivFormatLandscape" data-aspect="16:9" type="button">
+              <span class="aspect-icon">📺</span>
+              <span class="aspect-name">16:9</span>
+              <small class="aspect-sub">YouTube Wide</small>
+            </button>
+            <button class="aspect-btn" id="aivFormatSquare" data-aspect="1:1" type="button">
+              <span class="aspect-icon">⏹️</span>
+              <span class="aspect-name">1:1</span>
+              <small class="aspect-sub">Square Post</small>
+            </button>
+          </div>
+        </div>
+
+        <!-- Visual Art Style Selector -->
+        <div class="sidebar-card">
+          <label class="section-label">🎨 Visual Art Style</label>
+          <div class="style-cards-grid" id="aivStylesGrid">
+            <button class="style-card is-active" data-style="cinematic" type="button">
+              <span class="style-icon">🎬</span>
+              <div class="style-info">
+                <strong>Cinematic Photorealism</strong>
+                <small>8K movie lighting & depth</small>
+              </div>
+            </button>
+            <button class="style-card" data-style="pixar" type="button">
+              <span class="style-icon">🧸</span>
+              <div class="style-info">
+                <strong>3D Pixar Animation</strong>
+                <small>Disney animated aesthetic</small>
+              </div>
+            </button>
+            <button class="style-card" data-style="anime" type="button">
+              <span class="style-icon">🎨</span>
+              <div class="style-info">
+                <strong>Modern Anime / Manga</strong>
+                <small>Makoto Shinkai atmosphere</small>
+              </div>
+            </button>
+            <button class="style-card" data-style="documentary" type="button">
+              <span class="style-icon">📜</span>
+              <div class="style-info">
+                <strong>Historical Documentary</strong>
+                <small>Authentic archival feel</small>
+              </div>
+            </button>
+            <button class="style-card" data-style="luxury" type="button">
+              <span class="style-icon">💰</span>
+              <div class="style-info">
+                <strong>Cash Cow Luxury</strong>
+                <small>Sleek gold & dark moody</small>
+              </div>
+            </button>
+            <button class="style-card" data-style="cyberpunk" type="button">
+              <span class="style-icon">⚡</span>
+              <div class="style-info">
+                <strong>Cyberpunk Neon</strong>
+                <small>Futuristic glowing cityscapes</small>
+              </div>
+            </button>
+            <button class="style-card" data-style="fantasy" type="button">
+              <span class="style-icon">🧙</span>
+              <div class="style-info">
+                <strong>Epic Fantasy</strong>
+                <small>Enchanted magical world</small>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Character Consistency Lock -->
+        <div class="sidebar-card">
+          <div class="card-head-simple" style="margin-bottom:0.4rem">
+            <label class="section-label" style="margin-bottom:0">👤 Character Consistency</label>
+            <span class="badge" style="background:rgba(99,102,241,0.2);color:#a5b4fc;font-size:0.65rem">Optional</span>
+          </div>
+          <input type="text" id="aivCharacterDesc" class="input-text" placeholder="e.g. Young Pakistani detective with black leather jacket, brown eyes" style="width:100%;font-size:0.8rem">
+          <small class="hint" style="font-size:0.7rem;margin-top:0.3rem;display:block">Locks character appearance across every generated scene.</small>
+        </div>
+
+        <!-- Voice & Subtitle Options -->
+        <div class="sidebar-card">
+          <label class="section-label">🎙️ Narration Voice</label>
+          <select id="aivVoiceSelect" class="select" style="width:100%;font-size:0.82rem;margin-bottom:0.7rem">
+            <option value="ur-PK-AsadNeural" selected>🇵🇰 Asad Neural (Urdu Male - Storyteller)</option>
+            <option value="ur-PK-UzmaNeural">🇵🇰 Uzma Neural (Urdu Female - Narrator/News)</option>
+            <option value="en-US-ChristopherNeural">🇺🇸 Christopher Neural (English Male - Deep)</option>
+            <option value="en-US-JennyNeural">🇺🇸 Jenny Neural (English Female - Natural)</option>
+            <option value="hi-IN-MadhurNeural">🇮🇳 Madhur Neural (Hindi Male)</option>
+            <option value="hi-IN-SwaraNeural">🇮🇳 Swara Neural (Hindi Female)</option>
+            <option value="ar-SA-HamedNeural">🇸🇦 Hamed Neural (Arabic Male)</option>
+          </select>
+
+          <label class="section-label">💬 Subtitle Style</label>
+          <select id="aivSubtitleStyle" class="select" style="width:100%;font-size:0.82rem;margin-bottom:0.7rem">
+            <option value="tiktok_yellow" selected>🟡 TikTok Yellow Pop (Viral Hook)</option>
+            <option value="youtube_bold">⚪ YouTube Bold Clean White</option>
+            <option value="neon_cyan">🔵 Cyber Neon Cyan</option>
+            <option value="elegant_gold">🟡 Documentary Rich Gold</option>
+            <option value="none">❌ No Subtitles (Clean Video)</option>
+          </select>
+
+          <div class="slider-row" style="margin-top:0.5rem">
+            <div class="slider-label">
+              <span>Voice Speed</span>
+              <strong id="valAivSpeed">1.0x</strong>
+            </div>
+            <input type="range" id="sliderAivSpeed" min="0.8" max="1.5" step="0.05" value="1.0">
+          </div>
+        </div>
+
+        <div class="voice-credit-pill" style="margin-top:0.5rem">
+          <span class="vcp-icon">⚡</span>
+          <div class="vcp-text">
+            <strong>100% Free & Unlimited</strong>
+            <small>Pollinations FLUX.1 + Edge-TTS (0 API Keys)</small>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ================= CENTER: SCRIPT CANVAS & ACTIONS ================= -->
+      <main class="ai-video-main">
+        <div class="ai-video-canvas-box">
+          <!-- Quick Starters -->
+          <div class="script-scenarios-row" style="margin-bottom:0.7rem">
+            <span class="scenarios-label">⚡ Quick Starters:</span>
+            <div class="scenarios-chips">
+              <button class="scenario-chip aiv-starter" data-starter="mystery" type="button">🔍 Ancient Mystery</button>
+              <button class="scenario-chip aiv-starter" data-starter="psychology" type="button">🧠 3 Psychology Hacks</button>
+              <button class="scenario-chip aiv-starter" data-starter="bayan" type="button">🕌 Islamic Moral Lesson</button>
+              <button class="scenario-chip aiv-starter" data-starter="motivation" type="button">🔥 High Motivation</button>
+            </div>
+          </div>
+
+          <!-- Script Input Area -->
+          <div class="script-editor-box">
+            <textarea id="aivScriptTextarea" class="script-textarea" placeholder="Paste your narration script or story here... (e.g. In the deep mountains of northern Pakistan, an ancient secret lay buried beneath the snow. [pause: 1s] No one dared to climb until one fateful winter morning.)" rows="11"></textarea>
+            
+            <div class="script-footer">
+              <div class="script-char-count">
+                <span id="aivWordCount">0</span> words · <span id="aivEstDuration">~0s</span> est. video duration
+              </div>
+              <div class="script-actions-row">
+                <button class="btn btn-ghost btn-sm" id="btnAivClear" type="button">Clear</button>
+                <button class="btn btn-ghost btn-sm" id="btnAivStoryboard" type="button" style="border-color:rgba(99,102,241,0.4);color:#a5b4fc">
+                  <span>📋 Preview Storyboard</span>
+                </button>
+                <button class="btn btn-primary" id="btnAivGenerate" type="button" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 4px 20px rgba(99,102,241,0.4);border:none;padding:0.6rem 1.4rem">
+                  <span id="aivBtnIcon">✨</span>
+                  <span id="aivBtnText" style="font-weight:700">Generate Full AI Video</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Multi-Step Progress Box (Hidden until generate clicked) -->
+          <div class="aiv-progress-box" id="aivProgressBox" hidden>
+            <div class="aiv-progress-header">
+              <div class="aiv-progress-status-row">
+                <span class="aiv-progress-spinner">⏳</span>
+                <div>
+                  <strong id="aivProgressTitle" style="color:var(--text);font-size:0.95rem">Directing AI Video...</strong>
+                  <div class="aiv-progress-msg" id="aivProgressMsg" style="color:var(--text-dim);font-size:0.8rem">Analyzing script and designing scenes...</div>
+                </div>
+              </div>
+              <span class="aiv-progress-pct" id="aivProgressPct">0%</span>
+            </div>
+
+            <!-- Visual Step Pipeline Tracker -->
+            <div class="aiv-steps-track">
+              <div class="aiv-step" id="aivStep1">
+                <span class="aiv-step-dot">1</span>
+                <span class="aiv-step-label">Scene Breakdown</span>
+              </div>
+              <div class="aiv-step" id="aivStep2">
+                <span class="aiv-step-dot">2</span>
+                <span class="aiv-step-label">Voiceover Sync</span>
+              </div>
+              <div class="aiv-step" id="aivStep3">
+                <span class="aiv-step-dot">3</span>
+                <span class="aiv-step-label">FLUX 4K Visuals</span>
+              </div>
+              <div class="aiv-step" id="aivStep4">
+                <span class="aiv-step-dot">4</span>
+                <span class="aiv-step-label">Ken Burns MP4</span>
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="tts-progress-track" style="margin-top:0.8rem">
+              <div class="tts-progress-fill" id="aivProgressFill" style="width:0%;background:linear-gradient(90deg,#6366f1,#8b5cf6,#10b981)"></div>
+            </div>
+          </div>
+
+          <!-- Final Video Result Box (Hidden until completed) -->
+          <div class="aiv-result-card" id="aivResultCard" hidden>
+            <div class="result-header">
+              <div class="result-info">
+                <strong style="color:var(--text);font-size:1.1rem">🎉 Your AI Video is Ready!</strong>
+                <small class="hint" id="aivResultMeta">Duration: 0.0s • 1080p • Ken Burns 3D Motion</small>
+              </div>
+              <div class="result-header-actions" style="display:flex;gap:0.5rem">
+                <button class="btn btn-primary" id="btnAivSendToTimeline" type="button" style="background:linear-gradient(135deg,#10b981,#059669);border:none">
+                  🎬 Open in Editing Timeline
+                </button>
+              </div>
+            </div>
+
+            <!-- Video Player -->
+            <div class="aiv-player-container" id="aivPlayerContainer">
+              <video id="aivVideoPlayer" controls playsinline style="max-width:100%;max-height:480px;border-radius:8px;background:#000;box-shadow:0 8px 30px rgba(0,0,0,0.6)"></video>
+            </div>
+
+            <!-- Download and Share Action Bar -->
+            <div class="aiv-result-actions-bar">
+              <a id="aivDownloadVideoLink" class="btn btn-primary" href="#" download="ai_studio_video.mp4" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none">
+                📥 Download Final MP4
+              </a>
+              <a id="aivDownloadAudioLink" class="btn btn-ghost btn-sm" href="#" download="voiceover.mp3">
+                🎙️ Download Voiceover (MP3)
+              </a>
+              <a id="aivDownloadSrtLink" class="btn btn-ghost btn-sm" href="#" download="subtitles.srt">
+                📄 Download Subtitles (SRT)
+              </a>
+              <button class="btn btn-ghost btn-sm" id="btnAivNewVideo" type="button" style="margin-left:auto">
+                ➕ Create Another
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+      <!-- ================= RIGHT: STORYBOARD SCENES INSPECTOR ================= -->
+      <aside class="ai-video-inspector">
+        <div class="card-head-simple" style="margin-bottom:0.7rem">
+          <div>
+            <strong style="font-size:0.9rem;color:var(--text)">🎬 Scene Storyboard</strong>
+            <small class="hint" id="aivSceneCountHint" style="display:block;font-size:0.72rem">0 scenes generated</small>
+          </div>
+          <button class="btn btn-ghost btn-xs" id="btnAivRefreshStoryboard" type="button" title="Refresh storyboard">🔄</button>
+        </div>
+
+        <div class="aiv-storyboard-list" id="aivStoryboardList">
+          <div class="aiv-empty-storyboard">
+            <span style="font-size:2rem;display:block;margin-bottom:0.5rem">🎞️</span>
+            <p style="font-size:0.8rem;color:var(--text-dim);line-height:1.4">
+              Enter your narration script and click <strong>"Preview Storyboard"</strong> or <strong>"Generate Full AI Video"</strong> to inspect every scene's 4K visual prompt and camera motion.
+            </p>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </section> <!-- END #panelAiVideo -->
 
   </div> <!-- END #mainContent -->
 </div> <!-- END #appShell -->

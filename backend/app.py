@@ -1855,6 +1855,177 @@ def repair_clean_cache():
 
 
 # ----------------------------------------------------------------------------
+# AI Video Studio Pipeline Endpoints (Phase 1: Automated Script-to-Video)
+# ----------------------------------------------------------------------------
+import ai_video_engine
+import asyncio
+
+@app.get("/ai-video/presets")
+def ai_video_presets():
+    """Returns styles, camera motions, and aspect ratios for AI Video Studio."""
+    return {
+        "status": "ok",
+        "styles": ai_video_engine.STYLE_PRESETS,
+        "camera_motions": ai_video_engine.CAMERA_MOTIONS,
+        "aspect_ratios": ["9:16", "16:9", "1:1"],
+        "subtitle_styles": [
+            {"id": "tiktok_yellow", "name": "TikTok Yellow Pop", "preview": "#FFD166"},
+            {"id": "youtube_bold", "name": "YouTube Bold White", "preview": "#FFFFFF"},
+            {"id": "neon_cyan", "name": "Cyber Neon Cyan", "preview": "#22D3EE"},
+            {"id": "elegant_gold", "name": "Documentary Gold", "preview": "#F4C430"},
+        ]
+    }
+
+
+@app.post("/ai-video/storyboard")
+async def ai_video_storyboard(payload: dict = Body(...)):
+    """Breaks down a script into previewable scene prompts."""
+    script_text = payload.get("script", "").strip()
+    style = payload.get("style", "cinematic")
+    character_desc = payload.get("character_desc", "").strip()
+    gemini_key = payload.get("gemini_key")
+    if not script_text:
+        raise HTTPException(status_code=400, detail="Script text cannot be empty.")
+
+    scenes = await ai_video_engine.breakdown_script_with_gemini_or_fallback(
+        script_text=script_text,
+        style_key=style,
+        character_desc=character_desc,
+        gemini_key=gemini_key
+    )
+    return {"status": "ok", "scenes": scenes, "count": len(scenes)}
+
+
+async def _run_ai_video_background(kwargs: dict):
+    job_id = kwargs["job_id"]
+    try:
+        await ai_video_engine.run_ai_video_pipeline(**kwargs)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        ai_video_engine.set_ai_video_progress(
+            job_id, 0, "failed", f"Generation failed: {str(e)}", is_done=True, error=str(e)
+        )
+
+
+@app.post("/ai-video/generate-full")
+async def ai_video_generate_full(payload: dict = Body(...)):
+    """Starts full automated video creation in the background."""
+    script_text = payload.get("script", "").strip()
+    if not script_text:
+        raise HTTPException(status_code=400, detail="Script text cannot be empty.")
+
+    aspect_ratio = payload.get("aspect_ratio", "9:16")
+    style_key = payload.get("style", "cinematic")
+    character_desc = payload.get("character_desc", "").strip()
+    voice_id = payload.get("voice_id", "ur-PK-AsadNeural")
+    speed = float(payload.get("speed", 1.0))
+    pitch = int(payload.get("pitch", 0))
+    subtitles_enabled = bool(payload.get("subtitles_enabled", True))
+    subtitle_style = payload.get("subtitle_style", "tiktok_yellow")
+    gemini_key = payload.get("gemini_key")
+    custom_scenes = payload.get("custom_scenes")
+
+    job_id = f"aiv_{uuid.uuid4().hex[:8]}"
+    session_upload_dir = os.path.join(UPLOAD_DIR, job_id)
+    os.makedirs(session_upload_dir, exist_ok=True)
+
+    ai_video_engine.set_ai_video_progress(
+        job_id, 2, "starting", "Initializing AI Video Studio pipeline..."
+    )
+
+    pipeline_kwargs = {
+        "job_id": job_id,
+        "script_text": script_text,
+        "aspect_ratio": aspect_ratio,
+        "style_key": style_key,
+        "character_desc": character_desc,
+        "voice_id": voice_id,
+        "speed": speed,
+        "pitch": pitch,
+        "subtitles_enabled": subtitles_enabled,
+        "subtitle_style": subtitle_style,
+        "session_upload_dir": session_upload_dir,
+        "gemini_key": gemini_key,
+        "custom_scenes": custom_scenes
+    }
+
+    asyncio.create_task(_run_ai_video_background(pipeline_kwargs))
+
+    return {"status": "ok", "job_id": job_id, "message": "Pipeline started"}
+
+
+@app.get("/ai-video/progress/{job_id}")
+def ai_video_progress(job_id: str):
+    """Poll live progress for an AI Video job."""
+    return ai_video_engine.get_ai_video_job(job_id)
+
+
+@app.post("/ai-video/send-to-timeline")
+def ai_video_send_to_timeline(request: Request, payload: dict = Body(...)):
+    """Transfers the generated AI video elements into an active session / project for editing."""
+    job_id = payload.get("job_id")
+    job = ai_video_engine.get_ai_video_job(job_id)
+    if not job or not job.get("result"):
+        raise HTTPException(status_code=404, detail="Job result not found or not yet finished.")
+
+    result = job["result"]
+    target_session_id = payload.get("session_id") or str(uuid.uuid4())[:8]
+    sess_dir = session_dir(target_session_id)
+    session = get_session(target_session_id)
+
+    audio_url = result.get("audio_url", "")
+    if audio_url:
+        src_audio = os.path.join(UPLOAD_DIR, job_id, os.path.basename(audio_url))
+        dest_audio_name = f"ai_voice_{target_session_id}.mp3"
+        dest_audio = os.path.join(sess_dir, dest_audio_name)
+        if os.path.exists(src_audio):
+            shutil.copyfile(src_audio, dest_audio)
+            session["voice_file"] = dest_audio
+            session["voice_duration"] = result.get("total_duration", 0.0)
+
+    segments = []
+    for s in result.get("scenes", []):
+        img_src = s.get("local_image_path")
+        if img_src and os.path.exists(img_src):
+            img_name = os.path.basename(img_src)
+            img_dest = os.path.join(sess_dir, img_name)
+            shutil.copyfile(img_src, img_dest)
+            rel = os.path.relpath(img_dest, UPLOAD_DIR).replace("\\", "/")
+            full_url = f"{base_url(request)}/files/{rel}"
+            segments.append({
+                "start": s["start"],
+                "end": s["end"],
+                "text": s["text"],
+                "media": {
+                    "type": "image",
+                    "local_path": img_dest,
+                    "full_url": full_url,
+                    "filename": img_name
+                },
+                "effect": s.get("motion", "zoom_in_slow")
+            })
+
+    session["segments"] = segments
+    session["raw_words"] = result.get("raw_words")
+    session["timing_source"] = "ai_video_studio"
+    session["settings"] = {
+        "aspect_ratio": result.get("aspect_ratio", "9:16"),
+        "resolution": "1080p",
+        "default_effect": "zoom_in_slow",
+        "transition": "fade"
+    }
+
+    return {
+        "status": "ok",
+        "session_id": target_session_id,
+        "segments": segments,
+        "voice_duration": session.get("voice_duration", 0.0),
+        "message": "AI Video successfully loaded into Timeline Editor! 🎬"
+    }
+
+
+# ----------------------------------------------------------------------------
 # Server entrypoint  —  `python app.py`
 # ----------------------------------------------------------------------------
 

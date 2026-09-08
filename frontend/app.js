@@ -3040,9 +3040,11 @@ function switchView(view) {
     editor: $("panelEditor"),
     projects: $("panelProjects"),
     voiceStudio: $("panelVoiceStudio"),
+    aiVideo: $("panelAiVideo"),
   };
   const navs = {
     welcome: $("navItemWelcome"),
+    aiVideo: $("navItemAiVideo"),
     workflow: $("navItemWorkflow"),
     editor: $("navItemEditor"),
     projects: $("navItemProjects"),
@@ -3052,6 +3054,7 @@ function switchView(view) {
   };
   const titles = {
     welcome: "🏠 Dashboard & Studio Overview",
+    aiVideo: "🤖 AI Video Studio (1-Click Script-to-Video)",
     workflow: "🎛️ Video Creation Studio (Step-by-Step)",
     editor: "🎬 Professional Interactive Timeline Studio",
     projects: "📁 Projects Library & Saved Drafts",
@@ -3080,6 +3083,8 @@ function switchView(view) {
     renderEditingPanel();
   } else if (view === "projects") {
     loadProjectsFullList();
+  } else if (view === "aiVideo") {
+    initAiVideoStudio();
   } else if (isVoiceStudioView) {
     initVoiceStudio();
     if (view === "freeVoices") {
@@ -3481,6 +3486,7 @@ function wireEvents() {
 
   /* Topbar & Sidebar Navigation */
   on("navItemWelcome", "click", () => switchView("welcome"));
+  on("navItemAiVideo", "click", () => switchView("aiVideo"));
   on("navItemNewProject", "click", openNewProjectModal);
   on("navItemWorkflow", "click", () => switchView("workflow"));
   on("navItemEditor", "click", () => switchView("editor"));
@@ -3492,11 +3498,13 @@ function wireEvents() {
   on("sidebarBtnLogout", "click", handleLogout);
 
   /* Welcome Dashboard Action Card buttons */
+  on("welcomeBtnAiVideo", "click", () => switchView("aiVideo"));
   on("welcomeBtnNewProject", "click", openNewProjectModal);
   on("welcomeBtnTimeline", "click", () => switchView("editor"));
   on("welcomeBtnVoiceStudio", "click", () => switchView("voiceStudio"));
   on("btnStepOpenVoiceStudio", "click", () => switchView("voiceStudio"));
   on("btnVoiceStudioToTimeline", "click", () => switchView("editor"));
+  on("btnAiVideoToTimeline", "click", () => switchView("editor"));
   on("welcomeBtnPresets", "click", () => { openAdminSidebar(); switchDrawerTab("additions"); });
   on("welcomeBtnProjects", "click", () => switchView("projects"));
   on("welcomeBtnDiagnostics", "click", () => { openAdminSidebar(); switchDrawerTab("diagnostics"); });
@@ -3683,6 +3691,454 @@ function wireEvents() {
   on("skipValidation", "change", saveSettings);
 
   window.addEventListener("beforeunload", saveSettings);
+}
+
+
+/* --------------------------------------------------------------------------
+   AI VIDEO STUDIO (Phase 1: Automated Script-to-Video Engine)
+   -------------------------------------------------------------------------- */
+const AIV_STARTERS = {
+  mystery: "In the deep hidden valleys of northern Pakistan, an ancient stone gate was uncovered after a massive avalanche. [pause: 1s] For three centuries, local legends warned that whoever enters this gate shall never return. [whisper] But yesterday, the carvings began to glow with mysterious blue fire.",
+  psychology: "Stop scrolling right now! [excited] Here are three psychological tricks that will make anyone respect you instantly. [pause: 500ms] Number one: Never break eye contact first when entering a room. Number two: Speak ten percent slower than everyone else. And number three will surprise you.",
+  bayan: "زندگی میں سب سے قیمتی چیز وقت اور دل کا سکون ہے۔ [pause: 1s] جب انسان دنیا کی دوڑ میں تھک جاتا ہے تو اسے صرف اللہ کے ذکر میں اطمینان ملتا ہے۔ [sigh] صبر وہ سواری ہے جو سوار کو کبھی گرنے نہیں دیتی۔",
+  motivation: "Every champion was once a contender that refused to give up. [pause: 1s] When the road gets dark and everyone doubts you, [excited] that is the exact moment you push forward! Your time is now!"
+};
+
+const aiVideoState = {
+  aspectRatio: "9:16",
+  style: "cinematic",
+  voice: "ur-PK-AsadNeural",
+  subtitleStyle: "tiktok_yellow",
+  speed: 1.0,
+  characterDesc: "",
+  activeJobId: null,
+  pollTimer: null,
+  scenes: [],
+  lastResult: null,
+  initialized: false
+};
+
+function initAiVideoStudio() {
+  if (aiVideoState.initialized) return;
+  aiVideoState.initialized = true;
+
+  // Aspect ratio toggles
+  const aspectBtns = $$(".aspect-btn", $("panelAiVideo"));
+  aspectBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      aspectBtns.forEach((b) => b.classList.remove("is-active"));
+      btn.classList.add("is-active");
+      aiVideoState.aspectRatio = btn.dataset.aspect || "9:16";
+    });
+  });
+
+  // Visual Art Style cards
+  const styleCards = $$(".style-card", $("aivStylesGrid"));
+  styleCards.forEach((card) => {
+    card.addEventListener("click", () => {
+      styleCards.forEach((c) => c.classList.remove("is-active"));
+      card.classList.add("is-active");
+      aiVideoState.style = card.dataset.style || "cinematic";
+    });
+  });
+
+  // Character description input
+  const charInput = $("aivCharacterDesc");
+  if (charInput) {
+    charInput.addEventListener("input", () => {
+      aiVideoState.characterDesc = charInput.value.trim();
+    });
+  }
+
+  // Voice selector
+  const voiceSelect = $("aivVoiceSelect");
+  if (voiceSelect) {
+    voiceSelect.addEventListener("change", () => {
+      aiVideoState.voice = voiceSelect.value;
+    });
+  }
+
+  // Subtitle style
+  const subSelect = $("aivSubtitleStyle");
+  if (subSelect) {
+    subSelect.addEventListener("change", () => {
+      aiVideoState.subtitleStyle = subSelect.value;
+    });
+  }
+
+  // Speed slider
+  const speedSlider = $("sliderAivSpeed");
+  const speedVal = $("valAivSpeed");
+  if (speedSlider) {
+    speedSlider.addEventListener("input", () => {
+      const val = parseFloat(speedSlider.value) || 1.0;
+      aiVideoState.speed = val;
+      if (speedVal) speedVal.textContent = val.toFixed(1) + "x";
+    });
+  }
+
+  // Quick Starter chips
+  const starters = $$(".aiv-starter", $("panelAiVideo"));
+  starters.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const key = chip.dataset.starter;
+      if (key && AIV_STARTERS[key]) {
+        const textarea = $("aivScriptTextarea");
+        if (textarea) {
+          textarea.value = AIV_STARTERS[key];
+          updateScriptCounts();
+        }
+      }
+    });
+  });
+
+  // Script textarea character & duration counter
+  const textarea = $("aivScriptTextarea");
+  if (textarea) {
+    textarea.addEventListener("input", updateScriptCounts);
+  }
+
+  function updateScriptCounts() {
+    const text = (textarea ? textarea.value : "").trim();
+    const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+    const estSec = Math.max(1, Math.round(words / 2.5));
+    const wordCountEl = $("aivWordCount");
+    const durEl = $("aivEstDuration");
+    if (wordCountEl) wordCountEl.textContent = String(words);
+    if (durEl) durEl.textContent = `~${estSec}s`;
+  }
+
+  // Clear button
+  on("btnAivClear", "click", () => {
+    if (textarea) {
+      textarea.value = "";
+      updateScriptCounts();
+    }
+  });
+
+  // Storyboard preview button
+  on("btnAivStoryboard", "click", async () => {
+    const script = (textarea ? textarea.value : "").trim();
+    if (!script) {
+      toast("Please enter a narration script first.", "warn");
+      return;
+    }
+    const btn = $("btnAivStoryboard");
+    if (btn) btn.disabled = true;
+    toast("Directing scenes...", "info");
+    try {
+      const res = await jpost("/ai-video/storyboard", {
+        script: script,
+        style: aiVideoState.style,
+        character_desc: aiVideoState.characterDesc
+      });
+      if (res && res.scenes) {
+        aiVideoState.scenes = res.scenes;
+        renderStoryboardScenes(res.scenes);
+        toast(`Storyboard ready! ${res.scenes.length} scenes created.`, "ok");
+      }
+    } catch (err) {
+      toast(err.message || "Failed to generate storyboard", "err");
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  });
+
+  // Refresh storyboard button
+  on("btnAivRefreshStoryboard", "click", () => {
+    if (aiVideoState.scenes && aiVideoState.scenes.length > 0) {
+      renderStoryboardScenes(aiVideoState.scenes);
+    }
+  });
+
+  // Generate Full Video Button
+  on("btnAivGenerate", "click", startAiVideoGeneration);
+
+  // Send to Timeline Button
+  on("btnAivSendToTimeline", "click", async () => {
+    if (!aiVideoState.lastResult || !aiVideoState.activeJobId) {
+      toast("No finished video available to send.", "warn");
+      return;
+    }
+    const sendBtn = $("btnAivSendToTimeline");
+    if (sendBtn) sendBtn.disabled = true;
+    try {
+      const res = await jpost("/ai-video/send-to-timeline", {
+        job_id: aiVideoState.activeJobId,
+        session_id: S.sid
+      });
+      if (res && res.session_id) {
+        S.sid = res.session_id;
+        toast("AI Video loaded into Timeline Workbench! 🎬", "ok");
+        switchView("editor");
+      }
+    } catch (err) {
+      toast(err.message || "Failed to send to timeline", "err");
+    } finally {
+      if (sendBtn) sendBtn.disabled = false;
+    }
+  });
+
+  // Create Another Video Button
+  on("btnAivNewVideo", "click", () => {
+    const resCard = $("aivResultCard");
+    if (resCard) resCard.hidden = true;
+    if (textarea) {
+      textarea.value = "";
+      updateScriptCounts();
+      textarea.focus();
+    }
+  });
+}
+
+function renderStoryboardScenes(scenes) {
+  const container = $("aivStoryboardList");
+  const countHint = $("aivSceneCountHint");
+  if (!container) return;
+
+  if (countHint) {
+    countHint.textContent = `${scenes.length} scenes planned`;
+  }
+
+  container.innerHTML = "";
+  if (!scenes || scenes.length === 0) {
+    const empty = el("div", { cls: "aiv-empty-storyboard" }, [
+      el("span", { style: { fontSize: "2rem", display: "block", marginBottom: "0.5rem" }, text: "🎞️" }),
+      el("p", {
+        style: { fontSize: "0.8rem", color: "var(--text-dim)", lineHeight: "1.4" },
+        text: "Enter your narration script and click 'Preview Storyboard' to see every scene breakdown."
+      })
+    ]);
+    container.appendChild(empty);
+    return;
+  }
+
+  scenes.forEach((sc, idx) => {
+    const card = el("div", { cls: "aiv-scene-card" });
+
+    // Header
+    const head = el("div", { cls: "aiv-scene-header" }, [
+      el("span", { cls: "aiv-scene-number", text: `Scene ${idx + 1}` }),
+      el("span", {
+        cls: "aiv-scene-timing",
+        text: sc.duration ? `${sc.start}s – ${sc.end}s (${sc.duration}s)` : `~4-6s`
+      })
+    ]);
+
+    // Body
+    const body = el("div", { cls: "aiv-scene-body" });
+
+    // Thumbnail or placeholder
+    if (sc.image_url) {
+      const img = el("img", {
+        cls: "aiv-scene-thumb",
+        attrs: { src: sc.image_url, alt: `Scene ${idx + 1}` }
+      });
+      body.appendChild(img);
+    } else {
+      const ph = el("div", {
+        cls: "aiv-scene-thumb",
+        style: { display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.5rem", color: "var(--text-dim)" },
+        text: "📷"
+      });
+      body.appendChild(ph);
+    }
+
+    const details = el("div", { cls: "aiv-scene-details" }, [
+      el("div", { cls: "aiv-scene-speech", text: sc.text || "—" }),
+      el("div", { cls: "aiv-scene-motion-pill", text: `🎥 ${sc.motion || "zoom_in_slow"}` }),
+      el("div", { cls: "aiv-scene-prompt", title: sc.prompt || "", text: `Prompt: ${sc.prompt || "Default"}` })
+    ]);
+    body.appendChild(details);
+
+    card.appendChild(head);
+    card.appendChild(body);
+    container.appendChild(card);
+  });
+}
+
+async function startAiVideoGeneration() {
+  const textarea = $("aivScriptTextarea");
+  const script = (textarea ? textarea.value : "").trim();
+  if (!script) {
+    toast("Please enter a narration script to generate a video.", "warn");
+    return;
+  }
+
+  const btn = $("btnAivGenerate");
+  const btnIcon = $("aivBtnIcon");
+  const btnText = $("aivBtnText");
+  const progressBox = $("aivProgressBox");
+  const resultCard = $("aivResultCard");
+
+  if (btn) btn.disabled = true;
+  if (btnIcon) btnIcon.textContent = "⏳";
+  if (btnText) btnText.textContent = "Directing...";
+
+  if (progressBox) progressBox.hidden = false;
+  if (resultCard) resultCard.hidden = true;
+
+  updateAivStepUI("breakdown", 5, "Director is analyzing script & composing scenes...");
+
+  try {
+    const res = await jpost("/ai-video/generate-full", {
+      script: script,
+      aspect_ratio: aiVideoState.aspectRatio,
+      style: aiVideoState.style,
+      character_desc: aiVideoState.characterDesc,
+      voice_id: aiVideoState.voice,
+      speed: aiVideoState.speed,
+      subtitles_enabled: aiVideoState.subtitleStyle !== "none",
+      subtitle_style: aiVideoState.subtitleStyle,
+      custom_scenes: aiVideoState.scenes.length > 0 ? aiVideoState.scenes : null
+    });
+
+    if (!res || !res.job_id) {
+      throw new Error("Failed to start AI Video pipeline.");
+    }
+
+    aiVideoState.activeJobId = res.job_id;
+    pollAiVideoProgress(res.job_id);
+
+  } catch (err) {
+    toast(err.message || "Failed to start generation", "err");
+    if (progressBox) progressBox.hidden = true;
+    if (btn) btn.disabled = false;
+    if (btnIcon) btnIcon.textContent = "✨";
+    if (btnText) btnText.textContent = "Generate Full AI Video";
+  }
+}
+
+function updateAivStepUI(stage, pct, msg) {
+  const pctEl = $("aivProgressPct");
+  const fillEl = $("aivProgressFill");
+  const msgEl = $("aivProgressMsg");
+  const titleEl = $("aivProgressTitle");
+
+  if (pctEl) pctEl.textContent = `${pct}%`;
+  if (fillEl) fillEl.style.width = `${pct}%`;
+  if (msgEl) msgEl.textContent = msg || "Processing...";
+
+  const step1 = $("aivStep1");
+  const step2 = $("aivStep2");
+  const step3 = $("aivStep3");
+  const step4 = $("aivStep4");
+
+  [step1, step2, step3, step4].forEach((s) => {
+    if (s) { s.classList.remove("is-active"); s.classList.remove("is-done"); }
+  });
+
+  if (stage === "breakdown" || stage === "starting") {
+    if (titleEl) titleEl.textContent = "Step 1/4: Directing & Scene Breakdown";
+    if (step1) step1.classList.add("is-active");
+  } else if (stage === "voice") {
+    if (titleEl) titleEl.textContent = "Step 2/4: Synthesizing Neural Voiceover & Subtitles";
+    if (step1) step1.classList.add("is-done");
+    if (step2) step2.classList.add("is-active");
+  } else if (stage === "images") {
+    if (titleEl) titleEl.textContent = "Step 3/4: Generating 4K Consistent Visuals (FLUX.1)";
+    if (step1) step1.classList.add("is-done");
+    if (step2) step2.classList.add("is-done");
+    if (step3) step3.classList.add("is-active");
+  } else if (stage === "rendering") {
+    if (titleEl) titleEl.textContent = "Step 4/4: FFmpeg Ken Burns 3D Motion & Assembly";
+    if (step1) step1.classList.add("is-done");
+    if (step2) step2.classList.add("is-done");
+    if (step3) step3.classList.add("is-done");
+    if (step4) step4.classList.add("is-active");
+  } else if (stage === "completed") {
+    if (titleEl) titleEl.textContent = "Completed! 🎬";
+    [step1, step2, step3, step4].forEach((s) => { if (s) s.classList.add("is-done"); });
+  }
+}
+
+function pollAiVideoProgress(jobId) {
+  if (aiVideoState.pollTimer) {
+    clearInterval(aiVideoState.pollTimer);
+    aiVideoState.pollTimer = null;
+  }
+
+  aiVideoState.pollTimer = setInterval(async () => {
+    try {
+      const job = await jget(`/ai-video/progress/${jobId}`);
+      if (!job) return;
+
+      const pct = job.percent || 0;
+      const stage = job.stage || "processing";
+      const msg = job.message || "";
+      const isDone = Boolean(job.is_done);
+      const error = job.error;
+
+      updateAivStepUI(stage, pct, msg);
+
+      // Live update scenes if available
+      if (job.result && job.result.scenes && job.result.scenes.length > 0) {
+        aiVideoState.scenes = job.result.scenes;
+        renderStoryboardScenes(job.result.scenes);
+      }
+
+      if (isDone) {
+        clearInterval(aiVideoState.pollTimer);
+        aiVideoState.pollTimer = null;
+
+        const btn = $("btnAivGenerate");
+        const btnIcon = $("aivBtnIcon");
+        const btnText = $("aivBtnText");
+        const progressBox = $("aivProgressBox");
+        const resultCard = $("aivResultCard");
+
+        if (btn) btn.disabled = false;
+        if (btnIcon) btnIcon.textContent = "✨";
+        if (btnText) btnText.textContent = "Generate Full AI Video";
+
+        if (error) {
+          toast(error, "err");
+          if (progressBox) progressBox.hidden = true;
+          return;
+        }
+
+        // Successfully rendered!
+        aiVideoState.lastResult = job.result;
+        toast("AI Video created successfully! 🎬✨", "ok");
+
+        setTimeout(() => {
+          if (progressBox) progressBox.hidden = true;
+          if (resultCard) {
+            resultCard.hidden = false;
+            resultCard.scrollIntoView({ behavior: "smooth" });
+          }
+
+          const player = $("aivVideoPlayer");
+          if (player && job.result && job.result.video_url) {
+            player.src = job.result.video_url;
+            player.load();
+          }
+
+          const videoDl = $("aivDownloadVideoLink");
+          if (videoDl && job.result && job.result.video_url) {
+            videoDl.href = job.result.video_url;
+          }
+
+          const audioDl = $("aivDownloadAudioLink");
+          if (audioDl && job.result && job.result.audio_url) {
+            audioDl.href = job.result.audio_url;
+          }
+
+          const srtDl = $("aivDownloadSrtLink");
+          if (srtDl && job.result && job.result.srt_url) {
+            srtDl.href = job.result.srt_url;
+          }
+
+          const meta = $("aivResultMeta");
+          if (meta && job.result) {
+            meta.textContent = `Duration: ${job.result.total_duration || 0}s • Format: ${job.result.aspect_ratio || "9:16"} • 1080p 60FPS Ken Burns`;
+          }
+        }, 800);
+      }
+    } catch (err) {
+      console.warn("Poll error:", err);
+    }
+  }, 1500);
 }
 
 /* ---------------------------- go ---------------------------- */
