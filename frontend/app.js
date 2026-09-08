@@ -3698,15 +3698,47 @@ function wireEvents() {
    AI VIDEO STUDIO (Phase 1: Automated Script-to-Video Engine)
    -------------------------------------------------------------------------- */
 const AIV_STARTERS = {
-  mystery: "In the deep hidden valleys of northern Pakistan, an ancient stone gate was uncovered after a massive avalanche. [pause: 1s] For three centuries, local legends warned that whoever enters this gate shall never return. [whisper] But yesterday, the carvings began to glow with mysterious blue fire.",
-  psychology: "Stop scrolling right now! [excited] Here are three psychological tricks that will make anyone respect you instantly. [pause: 500ms] Number one: Never break eye contact first when entering a room. Number two: Speak ten percent slower than everyone else. And number three will surprise you.",
-  bayan: "زندگی میں سب سے قیمتی چیز وقت اور دل کا سکون ہے۔ [pause: 1s] جب انسان دنیا کی دوڑ میں تھک جاتا ہے تو اسے صرف اللہ کے ذکر میں اطمینان ملتا ہے۔ [sigh] صبر وہ سواری ہے جو سوار کو کبھی گرنے نہیں دیتی۔",
-  motivation: "Every champion was once a contender that refused to give up. [pause: 1s] When the road gets dark and everyone doubts you, [excited] that is the exact moment you push forward! Your time is now!"
+  history_mystery: {
+    label: "🔍 Ancient Mystery",
+    text: "In the deep hidden valleys of northern Pakistan, an ancient stone gate was uncovered after a massive avalanche. [pause: 1s] For three centuries, local legends warned that whoever enters this gate shall never return. [whisper] But yesterday, the carvings began to glow with mysterious blue fire."
+  },
+  psychology_facts: {
+    label: "🧠 3 Psychology Hacks",
+    text: "Stop scrolling right now! [excited] Here are three psychological tricks that will make anyone respect you instantly. [pause: 500ms] Number one: Never break eye contact first when entering a room. Number two: Speak ten percent slower than everyone else. And number three will surprise you."
+  },
+  islamic_moral: {
+    label: "🕌 Islamic Moral Lesson",
+    text: "زندگی میں سب سے قیمتی چیز وقت اور دل کا سکون ہے۔ [pause: 1s] جب انسان دنیا کی دوڑ میں تھک جاتا ہے تو اسے صرف اللہ کے ذکر میں اطمینان ملتا ہے۔ [sigh] صبر وہ سواری ہے جو سوار کو کبھی گرنے نہیں دیتی۔"
+  },
+  cash_cow_finance: {
+    label: "💰 1% Wealth Secret",
+    text: "Here is why the top one percent never keep their money in savings accounts. [pause: 1s] While ordinary people work for dollars, the ultra-wealthy use compounding assets and silent leverage to generate wealth in their sleep."
+  },
+  horror_spooky: {
+    label: "😨 3:17 AM Room",
+    text: "The clock struck exactly 3:17 AM when the wooden floorboards began to creak outside my bedroom door. [pause: 1s] [whisper] I live alone on the twelfth floor of an abandoned apartment building."
+  },
+  motivation_success: {
+    label: "🔥 High Motivation",
+    text: "Every champion was once a contender that refused to give up. [pause: 1s] When the road gets dark and everyone doubts you, [excited] that is the exact moment you push forward! Your time is now!"
+  },
+  tech_ai: {
+    label: "🚀 Quantum Breakthrough",
+    text: "Scientists have just activated a quantum processor that solved a million-year calculation in under four seconds. [pause: 1s] What they discovered hidden inside the data will rewrite human history forever."
+  },
+  kids_tales: {
+    label: "👶 Barnaby's Wish",
+    text: "Once upon a time, in a magical enchanted forest filled with glowing butterflies, lived a tiny brown rabbit named Barnaby. [laugh] Barnaby had one secret wish: he wanted to touch the silver moon."
+  }
 };
 
 const aiVideoState = {
-  aspectRatio: "9:16",
+  videoType: "motion_cinematic",
+  niche: "history_mystery",
+  customNicheText: "",
   style: "cinematic",
+  customStylePrompt: "",
+  aspectRatio: "9:16",
   voice: "ur-PK-AsadNeural",
   subtitleStyle: "tiktok_yellow",
   speed: 1.0,
@@ -3718,10 +3750,116 @@ const aiVideoState = {
   initialized: false
 };
 
+function renderAivStarters(currentNiche) {
+  const row = $("aivStartersRow");
+  if (!row) return;
+  row.innerHTML = "";
+
+  const keys = Object.keys(AIV_STARTERS);
+  const orderedKeys = keys.includes(currentNiche)
+    ? [currentNiche, ...keys.filter((k) => k !== currentNiche)]
+    : keys;
+
+  orderedKeys.slice(0, 5).forEach((key) => {
+    const item = AIV_STARTERS[key];
+    if (!item) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "scenario-chip aiv-starter" + (key === currentNiche ? " is-active" : "");
+    btn.dataset.starter = key;
+    btn.textContent = item.label;
+    btn.addEventListener("click", () => {
+      const textarea = $("aivScriptTextarea");
+      if (textarea) {
+        textarea.value = item.text;
+        updateScriptCounts();
+      }
+    });
+    row.appendChild(btn);
+  });
+}
+
+function updateScriptCounts() {
+  const textarea = $("aivScriptTextarea");
+  const text = (textarea ? textarea.value : "").trim();
+  const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+  const estSec = Math.max(1, Math.round(words / 2.5));
+  const wordCountEl = $("aivWordCount");
+  const durEl = $("aivEstDuration");
+  if (wordCountEl) wordCountEl.textContent = String(words);
+  if (durEl) durEl.textContent = `~${estSec}s`;
+}
+
 function initAiVideoStudio() {
   if (aiVideoState.initialized) return;
   aiVideoState.initialized = true;
 
+  // STEP 1: Video Type Selection
+  const videoTypeCards = $$(".video-type-card", $("aivVideoTypesGrid"));
+  videoTypeCards.forEach((card) => {
+    card.addEventListener("click", () => {
+      videoTypeCards.forEach((c) => c.classList.remove("is-active"));
+      card.classList.add("is-active");
+      aiVideoState.videoType = card.dataset.type || "motion_cinematic";
+    });
+  });
+
+  // STEP 2: Niche & Category Selection
+  const nicheChips = $$(".niche-chip", $("aivNichesGrid"));
+  const customNicheBox = $("aivCustomNicheBox");
+  const customNicheInput = $("aivCustomNicheInput");
+
+  nicheChips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      nicheChips.forEach((c) => c.classList.remove("is-active"));
+      chip.classList.add("is-active");
+      const niche = chip.dataset.niche || "history_mystery";
+      aiVideoState.niche = niche;
+
+      if (niche === "custom_niche") {
+        if (customNicheBox) customNicheBox.hidden = false;
+        if (customNicheInput) customNicheInput.focus();
+      } else {
+        if (customNicheBox) customNicheBox.hidden = true;
+      }
+      renderAivStarters(niche);
+    });
+  });
+
+  if (customNicheInput) {
+    customNicheInput.addEventListener("input", () => {
+      aiVideoState.customNicheText = customNicheInput.value.trim();
+    });
+  }
+
+  // STEP 3: Visual Art Style Selection
+  const styleCards = $$(".style-card", $("aivStylesGrid"));
+  const customStyleBox = $("aivCustomStyleBox");
+  const customStyleInput = $("aivCustomStyleInput");
+
+  styleCards.forEach((card) => {
+    card.addEventListener("click", () => {
+      styleCards.forEach((c) => c.classList.remove("is-active"));
+      card.classList.add("is-active");
+      const style = card.dataset.style || "cinematic";
+      aiVideoState.style = style;
+
+      if (style === "custom_style") {
+        if (customStyleBox) customStyleBox.hidden = false;
+        if (customStyleInput) customStyleInput.focus();
+      } else {
+        if (customStyleBox) customStyleBox.hidden = true;
+      }
+    });
+  });
+
+  if (customStyleInput) {
+    customStyleInput.addEventListener("input", () => {
+      aiVideoState.customStylePrompt = customStyleInput.value.trim();
+    });
+  }
+
+  // STEP 4: Format & Narration
   // Aspect ratio toggles
   const aspectBtns = $$(".aspect-btn", $("panelAiVideo"));
   aspectBtns.forEach((btn) => {
@@ -3729,16 +3867,6 @@ function initAiVideoStudio() {
       aspectBtns.forEach((b) => b.classList.remove("is-active"));
       btn.classList.add("is-active");
       aiVideoState.aspectRatio = btn.dataset.aspect || "9:16";
-    });
-  });
-
-  // Visual Art Style cards
-  const styleCards = $$(".style-card", $("aivStylesGrid"));
-  styleCards.forEach((card) => {
-    card.addEventListener("click", () => {
-      styleCards.forEach((c) => c.classList.remove("is-active"));
-      card.classList.add("is-active");
-      aiVideoState.style = card.dataset.style || "cinematic";
     });
   });
 
@@ -3777,35 +3905,13 @@ function initAiVideoStudio() {
     });
   }
 
-  // Quick Starter chips
-  const starters = $$(".aiv-starter", $("panelAiVideo"));
-  starters.forEach((chip) => {
-    chip.addEventListener("click", () => {
-      const key = chip.dataset.starter;
-      if (key && AIV_STARTERS[key]) {
-        const textarea = $("aivScriptTextarea");
-        if (textarea) {
-          textarea.value = AIV_STARTERS[key];
-          updateScriptCounts();
-        }
-      }
-    });
-  });
+  // Render initial dynamic starters
+  renderAivStarters(aiVideoState.niche);
 
   // Script textarea character & duration counter
   const textarea = $("aivScriptTextarea");
   if (textarea) {
     textarea.addEventListener("input", updateScriptCounts);
-  }
-
-  function updateScriptCounts() {
-    const text = (textarea ? textarea.value : "").trim();
-    const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
-    const estSec = Math.max(1, Math.round(words / 2.5));
-    const wordCountEl = $("aivWordCount");
-    const durEl = $("aivEstDuration");
-    if (wordCountEl) wordCountEl.textContent = String(words);
-    if (durEl) durEl.textContent = `~${estSec}s`;
   }
 
   // Clear button
@@ -3829,7 +3935,11 @@ function initAiVideoStudio() {
     try {
       const res = await jpost("/ai-video/storyboard", {
         script: script,
+        video_type: aiVideoState.videoType,
+        niche: aiVideoState.niche,
+        custom_niche_text: aiVideoState.customNicheText,
         style: aiVideoState.style,
+        custom_style_prompt: aiVideoState.customStylePrompt,
         character_desc: aiVideoState.characterDesc
       });
       if (res && res.scenes) {
@@ -3983,8 +4093,12 @@ async function startAiVideoGeneration() {
   try {
     const res = await jpost("/ai-video/generate-full", {
       script: script,
+      video_type: aiVideoState.videoType,
+      niche: aiVideoState.niche,
+      custom_niche_text: aiVideoState.customNicheText,
       aspect_ratio: aiVideoState.aspectRatio,
       style: aiVideoState.style,
+      custom_style_prompt: aiVideoState.customStylePrompt,
       character_desc: aiVideoState.characterDesc,
       voice_id: aiVideoState.voice,
       speed: aiVideoState.speed,

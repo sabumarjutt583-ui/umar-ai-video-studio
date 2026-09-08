@@ -1862,9 +1862,11 @@ import asyncio
 
 @app.get("/ai-video/presets")
 def ai_video_presets():
-    """Returns styles, camera motions, and aspect ratios for AI Video Studio."""
+    """Returns video types, niches, styles, camera motions, and aspect ratios for AI Video Studio."""
     return {
         "status": "ok",
+        "video_types": ai_video_engine.VIDEO_TYPES,
+        "niches": ai_video_engine.NICHES_CATALOG,
         "styles": ai_video_engine.STYLE_PRESETS,
         "camera_motions": ai_video_engine.CAMERA_MOTIONS,
         "aspect_ratios": ["9:16", "16:9", "1:1"],
@@ -1883,6 +1885,10 @@ async def ai_video_storyboard(payload: dict = Body(...)):
     script_text = payload.get("script", "").strip()
     style = payload.get("style", "cinematic")
     character_desc = payload.get("character_desc", "").strip()
+    video_type = payload.get("video_type", "motion_cinematic")
+    niche = payload.get("niche", "history_mystery")
+    custom_niche_text = payload.get("custom_niche_text", "").strip()
+    custom_style_prompt = payload.get("custom_style_prompt", "").strip()
     gemini_key = payload.get("gemini_key")
     if not script_text:
         raise HTTPException(status_code=400, detail="Script text cannot be empty.")
@@ -1891,6 +1897,10 @@ async def ai_video_storyboard(payload: dict = Body(...)):
         script_text=script_text,
         style_key=style,
         character_desc=character_desc,
+        video_type=video_type,
+        niche=niche,
+        custom_niche_text=custom_niche_text,
+        custom_style_prompt=custom_style_prompt,
         gemini_key=gemini_key
     )
     return {"status": "ok", "scenes": scenes, "count": len(scenes)}
@@ -1918,6 +1928,10 @@ async def ai_video_generate_full(payload: dict = Body(...)):
     aspect_ratio = payload.get("aspect_ratio", "9:16")
     style_key = payload.get("style", "cinematic")
     character_desc = payload.get("character_desc", "").strip()
+    video_type = payload.get("video_type", "motion_cinematic")
+    niche = payload.get("niche", "history_mystery")
+    custom_niche_text = payload.get("custom_niche_text", "").strip()
+    custom_style_prompt = payload.get("custom_style_prompt", "").strip()
     voice_id = payload.get("voice_id", "ur-PK-AsadNeural")
     speed = float(payload.get("speed", 1.0))
     pitch = int(payload.get("pitch", 0))
@@ -1940,6 +1954,10 @@ async def ai_video_generate_full(payload: dict = Body(...)):
         "aspect_ratio": aspect_ratio,
         "style_key": style_key,
         "character_desc": character_desc,
+        "video_type": video_type,
+        "niche": niche,
+        "custom_niche_text": custom_niche_text,
+        "custom_style_prompt": custom_style_prompt,
         "voice_id": voice_id,
         "speed": speed,
         "pitch": pitch,

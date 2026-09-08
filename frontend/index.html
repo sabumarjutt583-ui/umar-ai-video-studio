@@ -1547,33 +1547,115 @@
     <!-- AI Video Studio Main 3-Column Workbench -->
     <div class="ai-video-grid">
 
-      <!-- ================= LEFT: SETTINGS & VISUAL STYLE ================= -->
+      <!-- ================= LEFT: STEP-BY-STEP WORKFLOW ================= -->
       <aside class="ai-video-sidebar">
-        <!-- Aspect Ratio Selection -->
+
+        <!-- STEP 1: VIDEO TYPE -->
         <div class="sidebar-card">
-          <label class="section-label">📐 Aspect Ratio / Target Format</label>
-          <div class="aspect-toggle-group">
-            <button class="aspect-btn is-active" id="aivFormatVertical" data-aspect="9:16" type="button">
-              <span class="aspect-icon">📱</span>
-              <span class="aspect-name">9:16</span>
-              <small class="aspect-sub">Shorts / Reels</small>
+          <div class="step-card-header">
+            <span class="step-num-badge">1</span>
+            <label class="section-label" style="margin:0">Video Type</label>
+          </div>
+          <div class="video-type-grid" id="aivVideoTypesGrid">
+            <button class="video-type-card is-active" data-type="motion_cinematic" type="button">
+              <span class="vt-icon">🎬</span>
+              <div class="vt-info">
+                <strong>Cinematic Motion</strong>
+                <small>Ken Burns 3D camera pan/zoom</small>
+              </div>
             </button>
-            <button class="aspect-btn" id="aivFormatLandscape" data-aspect="16:9" type="button">
-              <span class="aspect-icon">📺</span>
-              <span class="aspect-name">16:9</span>
-              <small class="aspect-sub">YouTube Wide</small>
+            <button class="video-type-card" data-type="animation_2d" type="button">
+              <span class="vt-icon">✏️</span>
+              <div class="vt-info">
+                <strong>2D Animation</strong>
+                <small>Vibrant cartoon & vector motion</small>
+              </div>
             </button>
-            <button class="aspect-btn" id="aivFormatSquare" data-aspect="1:1" type="button">
-              <span class="aspect-icon">⏹️</span>
-              <span class="aspect-name">1:1</span>
-              <small class="aspect-sub">Square Post</small>
+            <button class="video-type-card" data-type="drama_story" type="button">
+              <span class="vt-icon">🎭</span>
+              <div class="vt-info">
+                <strong>Multi-Character Drama</strong>
+                <small>Dialogue mode with speaker cuts</small>
+              </div>
+            </button>
+            <button class="video-type-card" data-type="talking_avatar" type="button">
+              <span class="vt-icon">🗣️</span>
+              <div class="vt-info">
+                <strong>Talking Avatar</strong>
+                <small>Character portrait presentation</small>
+              </div>
+            </button>
+            <button class="video-type-card" data-type="living_motion" type="button">
+              <span class="vt-icon">🌊</span>
+              <div class="vt-info">
+                <strong>AI Living Motion</strong>
+                <small>Living video environment motion</small>
+              </div>
+            </button>
+            <button class="video-type-card" data-type="stock_documentary" type="button">
+              <span class="vt-icon">🎞️</span>
+              <div class="vt-info">
+                <strong>Stock Documentary</strong>
+                <small>Real footage realism style</small>
+              </div>
+            </button>
+            <button class="video-type-card" data-type="kids_animation" type="button">
+              <span class="vt-icon">🧸</span>
+              <div class="vt-info">
+                <strong>3D Kids Story</strong>
+                <small>Disney Pixar cartoon adventure</small>
+              </div>
             </button>
           </div>
         </div>
 
-        <!-- Visual Art Style Selector -->
+        <!-- STEP 2: NICHE & CATEGORY -->
         <div class="sidebar-card">
-          <label class="section-label">🎨 Visual Art Style</label>
+          <div class="step-card-header">
+            <span class="step-num-badge">2</span>
+            <label class="section-label" style="margin:0">Niche & Category</label>
+          </div>
+          <div class="niche-chips-grid" id="aivNichesGrid">
+            <button class="niche-chip is-active" data-niche="history_mystery" type="button">
+              <span>📜</span> History & Mystery
+            </button>
+            <button class="niche-chip" data-niche="psychology_facts" type="button">
+              <span>🧠</span> Psychology Hacks
+            </button>
+            <button class="niche-chip" data-niche="islamic_moral" type="button">
+              <span>🕌</span> Islamic & Moral
+            </button>
+            <button class="niche-chip" data-niche="cash_cow_finance" type="button">
+              <span>💰</span> Cash Cow Wealth
+            </button>
+            <button class="niche-chip" data-niche="horror_spooky" type="button">
+              <span>😨</span> Horror & Spooky
+            </button>
+            <button class="niche-chip" data-niche="motivation_success" type="button">
+              <span>🔥</span> Motivation
+            </button>
+            <button class="niche-chip" data-niche="tech_ai" type="button">
+              <span>🚀</span> Future Tech & AI
+            </button>
+            <button class="niche-chip" data-niche="kids_tales" type="button">
+              <span>👶</span> Kids Stories
+            </button>
+            <button class="niche-chip" data-niche="custom_niche" type="button" style="border-color:rgba(99,102,241,0.5)">
+              <span>✍️</span> Custom Niche
+            </button>
+          </div>
+          <!-- Custom Niche Input (Expands when Custom Niche selected) -->
+          <div class="custom-input-box" id="aivCustomNicheBox" hidden style="margin-top:0.6rem">
+            <input type="text" id="aivCustomNicheInput" class="input-text" placeholder="Write your custom niche (e.g. Cricket, Crypto, Cooking)..." style="width:100%;font-size:0.8rem">
+          </div>
+        </div>
+
+        <!-- STEP 3: VISUAL ART STYLE -->
+        <div class="sidebar-card">
+          <div class="step-card-header">
+            <span class="step-num-badge">3</span>
+            <label class="section-label" style="margin:0">Visual Art Style</label>
+          </div>
           <div class="style-cards-grid" id="aivStylesGrid">
             <button class="style-card is-active" data-style="cinematic" type="button">
               <span class="style-icon">🎬</span>
@@ -1587,6 +1669,20 @@
               <div class="style-info">
                 <strong>3D Pixar Animation</strong>
                 <small>Disney animated aesthetic</small>
+              </div>
+            </button>
+            <button class="style-card" data-style="cartoon_2d" type="button">
+              <span class="style-icon">✏️</span>
+              <div class="style-info">
+                <strong>2D Cartoon / Flat Art</strong>
+                <small>Vibrant cel-shaded cartoon</small>
+              </div>
+            </button>
+            <button class="style-card" data-style="stickman" type="button">
+              <span class="style-icon">🖍️</span>
+              <div class="style-info">
+                <strong>Stickman / Doodle Explainer</strong>
+                <small>Viral whiteboard sketch figure</small>
               </div>
             </button>
             <button class="style-card" data-style="anime" type="button">
@@ -1624,22 +1720,53 @@
                 <small>Enchanted magical world</small>
               </div>
             </button>
+            <button class="style-card" data-style="custom_style" type="button" style="border-color:rgba(139,92,246,0.5)">
+              <span class="style-icon">✨</span>
+              <div class="style-info">
+                <strong>Custom Style Prompt</strong>
+                <small>Write your own art prompt</small>
+              </div>
+            </button>
+          </div>
+          <!-- Custom Style Input (Expands when Custom Style selected) -->
+          <div class="custom-input-box" id="aivCustomStyleBox" hidden style="margin-top:0.6rem">
+            <textarea id="aivCustomStyleInput" class="script-textarea" rows="2" placeholder="Describe your custom style (e.g. Vintage 1950s comic book art, claymation, watercolor painting)..." style="width:100%;font-size:0.8rem"></textarea>
           </div>
         </div>
 
-        <!-- Character Consistency Lock -->
+        <!-- STEP 4: FORMAT & NARRATION -->
         <div class="sidebar-card">
-          <div class="card-head-simple" style="margin-bottom:0.4rem">
-            <label class="section-label" style="margin-bottom:0">👤 Character Consistency</label>
+          <div class="step-card-header">
+            <span class="step-num-badge">4</span>
+            <label class="section-label" style="margin:0">Format & Narration</label>
+          </div>
+
+          <label class="section-sublabel">Aspect Ratio</label>
+          <div class="aspect-toggle-group" style="margin-bottom:0.7rem">
+            <button class="aspect-btn is-active" id="aivFormatVertical" data-aspect="9:16" type="button">
+              <span class="aspect-icon">📱</span>
+              <span class="aspect-name">9:16</span>
+              <small class="aspect-sub">Shorts / Reels</small>
+            </button>
+            <button class="aspect-btn" id="aivFormatLandscape" data-aspect="16:9" type="button">
+              <span class="aspect-icon">📺</span>
+              <span class="aspect-name">16:9</span>
+              <small class="aspect-sub">YouTube Wide</small>
+            </button>
+            <button class="aspect-btn" id="aivFormatSquare" data-aspect="1:1" type="button">
+              <span class="aspect-icon">⏹️</span>
+              <span class="aspect-name">1:1</span>
+              <small class="aspect-sub">Square Post</small>
+            </button>
+          </div>
+
+          <div class="card-head-simple" style="margin-bottom:0.3rem">
+            <label class="section-sublabel" style="margin-bottom:0">Character Lock</label>
             <span class="badge" style="background:rgba(99,102,241,0.2);color:#a5b4fc;font-size:0.65rem">Optional</span>
           </div>
-          <input type="text" id="aivCharacterDesc" class="input-text" placeholder="e.g. Young Pakistani detective with black leather jacket, brown eyes" style="width:100%;font-size:0.8rem">
-          <small class="hint" style="font-size:0.7rem;margin-top:0.3rem;display:block">Locks character appearance across every generated scene.</small>
-        </div>
+          <input type="text" id="aivCharacterDesc" class="input-text" placeholder="e.g. Young detective with black trench coat" style="width:100%;font-size:0.8rem;margin-bottom:0.7rem">
 
-        <!-- Voice & Subtitle Options -->
-        <div class="sidebar-card">
-          <label class="section-label">🎙️ Narration Voice</label>
+          <label class="section-sublabel">Narration Voice</label>
           <select id="aivVoiceSelect" class="select" style="width:100%;font-size:0.82rem;margin-bottom:0.7rem">
             <option value="ur-PK-AsadNeural" selected>🇵🇰 Asad Neural (Urdu Male - Storyteller)</option>
             <option value="ur-PK-UzmaNeural">🇵🇰 Uzma Neural (Urdu Female - Narrator/News)</option>
@@ -1650,7 +1777,7 @@
             <option value="ar-SA-HamedNeural">🇸🇦 Hamed Neural (Arabic Male)</option>
           </select>
 
-          <label class="section-label">💬 Subtitle Style</label>
+          <label class="section-sublabel">Subtitle Style</label>
           <select id="aivSubtitleStyle" class="select" style="width:100%;font-size:0.82rem;margin-bottom:0.7rem">
             <option value="tiktok_yellow" selected>🟡 TikTok Yellow Pop (Viral Hook)</option>
             <option value="youtube_bold">⚪ YouTube Bold Clean White</option>
@@ -1659,7 +1786,7 @@
             <option value="none">❌ No Subtitles (Clean Video)</option>
           </select>
 
-          <div class="slider-row" style="margin-top:0.5rem">
+          <div class="slider-row" style="margin-top:0.3rem">
             <div class="slider-label">
               <span>Voice Speed</span>
               <strong id="valAivSpeed">1.0x</strong>
@@ -1668,7 +1795,7 @@
           </div>
         </div>
 
-        <div class="voice-credit-pill" style="margin-top:0.5rem">
+        <div class="voice-credit-pill" style="margin-top:0.3rem">
           <span class="vcp-icon">⚡</span>
           <div class="vcp-text">
             <strong>100% Free & Unlimited</strong>
@@ -1680,14 +1807,14 @@
       <!-- ================= CENTER: SCRIPT CANVAS & ACTIONS ================= -->
       <main class="ai-video-main">
         <div class="ai-video-canvas-box">
-          <!-- Quick Starters -->
+          <!-- Dynamic Quick Starters by Niche -->
           <div class="script-scenarios-row" style="margin-bottom:0.7rem">
-            <span class="scenarios-label">⚡ Quick Starters:</span>
-            <div class="scenarios-chips">
-              <button class="scenario-chip aiv-starter" data-starter="mystery" type="button">🔍 Ancient Mystery</button>
-              <button class="scenario-chip aiv-starter" data-starter="psychology" type="button">🧠 3 Psychology Hacks</button>
-              <button class="scenario-chip aiv-starter" data-starter="bayan" type="button">🕌 Islamic Moral Lesson</button>
-              <button class="scenario-chip aiv-starter" data-starter="motivation" type="button">🔥 High Motivation</button>
+            <span class="scenarios-label">⚡ Starters:</span>
+            <div class="scenarios-chips" id="aivStartersRow">
+              <button class="scenario-chip aiv-starter" data-starter="history_mystery" type="button">🔍 Ancient Mystery</button>
+              <button class="scenario-chip aiv-starter" data-starter="psychology_facts" type="button">🧠 3 Psychology Hacks</button>
+              <button class="scenario-chip aiv-starter" data-starter="islamic_moral" type="button">🕌 Islamic Moral Lesson</button>
+              <button class="scenario-chip aiv-starter" data-starter="motivation_success" type="button">🔥 High Motivation</button>
             </div>
           </div>
 

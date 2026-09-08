@@ -26,7 +26,131 @@ from video_assembler import assemble_video, get_dimensions
 logger = logging.getLogger("ai_video_engine")
 
 # ---------------------------------------------------------------------------
-# Art Styles & Cinematic Anchors
+# 1. Video Types Catalog (Step 1)
+# ---------------------------------------------------------------------------
+VIDEO_TYPES = {
+    "motion_cinematic": {
+        "id": "motion_cinematic",
+        "name": "Cinematic Motion",
+        "badge": "Ken Burns 3D",
+        "icon": "🎬",
+        "desc": "High-impact 4K visuals with 3D camera pan & zoom movements"
+    },
+    "animation_2d": {
+        "id": "animation_2d",
+        "name": "2D Animation",
+        "badge": "Cartoon Motion",
+        "icon": "✏️",
+        "desc": "Vibrant 2D cartoon & cel-shaded storytelling with motion"
+    },
+    "drama_story": {
+        "id": "drama_story",
+        "name": "Multi-Character Drama",
+        "badge": "Dialogue Mode",
+        "icon": "🎭",
+        "desc": "Story drama with multiple characters speaking their own lines"
+    },
+    "talking_avatar": {
+        "id": "talking_avatar",
+        "name": "Talking Avatar",
+        "badge": "Lip-Sync Focus",
+        "icon": "🗣️",
+        "desc": "Expressive character portrait focused presentation"
+    },
+    "living_motion": {
+        "id": "living_motion",
+        "name": "AI Living Motion",
+        "badge": "AI Video",
+        "icon": "🌊",
+        "desc": "Living motion video visuals with dynamic environment action"
+    },
+    "stock_documentary": {
+        "id": "stock_documentary",
+        "name": "Stock Documentary",
+        "badge": "Real Footage",
+        "icon": "🎞️",
+        "desc": "Authentic real-world documentary footage with narration"
+    },
+    "kids_animation": {
+        "id": "kids_animation",
+        "name": "3D Kids Story",
+        "badge": "Pixar Style",
+        "icon": "🧸",
+        "desc": "Whimsical 3D animated fairytale with lively characters"
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 2. Niches & Categories Catalog (Step 2)
+# ---------------------------------------------------------------------------
+NICHES_CATALOG = {
+    "islamic_moral": {
+        "id": "islamic_moral",
+        "name": "Islamic & Moral Lessons",
+        "icon": "🕌",
+        "desc": "Bayanat, moral wisdom, peaceful spiritual reflections",
+        "starter": "زندگی میں سب سے قیمتی چیز وقت اور دل کا سکون ہے۔ [pause: 1s] جب انسان دنیا کی دوڑ میں تھک جاتا ہے تو اسے صرف اللہ کے ذکر میں اطمینان ملتا ہے۔ [sigh] صبر وہ سواری ہے جو سوار کو کبھی گرنے نہیں دیتی۔"
+    },
+    "psychology_facts": {
+        "id": "psychology_facts",
+        "name": "Psychology & Mind Hacks",
+        "icon": "🧠",
+        "desc": "Viral shorts hooks, dark psychology, body language tips",
+        "starter": "Stop scrolling right now! [excited] Here are three psychological tricks that will make anyone respect you instantly. [pause: 500ms] Number one: Never break eye contact first when entering a room. Number two: Speak ten percent slower than everyone else. And number three will surprise you."
+    },
+    "history_mystery": {
+        "id": "history_mystery",
+        "name": "History & Ancient Mysteries",
+        "icon": "📜",
+        "desc": "Lost civilizations, archaeological enigmas, ancient secrets",
+        "starter": "In the deep hidden valleys of northern Pakistan, an ancient stone gate was uncovered after a massive avalanche. [pause: 1s] For three centuries, local legends warned that whoever enters this gate shall never return. [whisper] But yesterday, the carvings began to glow with blue fire."
+    },
+    "cash_cow_finance": {
+        "id": "cash_cow_finance",
+        "name": "Cash Cow Wealth & Luxury",
+        "icon": "💰",
+        "desc": "Billionaire lifestyle, financial freedom, money mindset",
+        "starter": "Here is why the top one percent never keep their money in savings accounts. [pause: 1s] While ordinary people work for dollars, the ultra-wealthy use compounding assets and silent leverage to generate wealth in their sleep."
+    },
+    "horror_spooky": {
+        "id": "horror_spooky",
+        "name": "Horror & Dark Stories",
+        "icon": "😨",
+        "desc": "Eerie supernatural suspense, ghost stories, thrilling hooks",
+        "starter": "The clock struck exactly 3:17 AM when the wooden floorboards began to creak outside my bedroom door. [pause: 1s] [whisper] I live alone on the twelfth floor of an abandoned apartment building."
+    },
+    "motivation_success": {
+        "id": "motivation_success",
+        "name": "Motivation & High Performance",
+        "icon": "🔥",
+        "desc": "Discipline, gym motivation, unstoppable mindset",
+        "starter": "Every champion was once a contender that refused to give up. [pause: 1s] When the road gets dark and everyone doubts you, [excited] that is the exact moment you push forward! Your time is now!"
+    },
+    "tech_ai": {
+        "id": "tech_ai",
+        "name": "Future Tech & AI",
+        "icon": "🚀",
+        "desc": "Futuristic robotics, sci-fi world, artificial intelligence",
+        "starter": "Scientists have just activated a quantum processor that solved a million-year calculation in under four seconds. [pause: 1s] What they discovered hidden inside the data will rewrite human history forever."
+    },
+    "kids_tales": {
+        "id": "kids_tales",
+        "name": "Kids Bedtime & Fairytales",
+        "icon": "👶",
+        "desc": "Fun bedtime stories, cute animals, moral tales for children",
+        "starter": "Once upon a time, in a magical enchanted forest filled with glowing butterflies, lived a tiny brown rabbit named Barnaby. [laugh] Barnaby had one secret wish: he wanted to touch the silver moon."
+    },
+    "custom_niche": {
+        "id": "custom_niche",
+        "name": "Custom Niche",
+        "icon": "✍️",
+        "desc": "Type your own custom topic or niche",
+        "starter": "Type your custom script here..."
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 3. Art Styles & Visual Anchors (Step 3)
 # ---------------------------------------------------------------------------
 STYLE_PRESETS = {
     "cinematic": {
@@ -44,6 +168,22 @@ STYLE_PRESETS = {
         "desc": "Vibrant 3D Disney & Pixar animated character aesthetics",
         "prompt_anchor": "3D Disney Pixar animation style, vibrant vivid colors, highly expressive character, soft studio rim lighting, subsurface scattering, cute appealing aesthetic, 8k octane render, masterpiece",
         "negative": "ugly, realistic human skin, creepy, dark, grainy, low resolution"
+    },
+    "cartoon_2d": {
+        "id": "cartoon_2d",
+        "name": "2D Cartoon / Flat Art",
+        "icon": "✏️",
+        "desc": "Clean vibrant 2D illustration, cel-shaded flat color vector art",
+        "prompt_anchor": "vibrant 2D cartoon animation style, clean vector line art, colorful cel-shaded flat illustration, expressive character design, modern cartoon network aesthetic, sharp outlines, 4k digital art",
+        "negative": "photorealistic, 3d, realistic human skin, blurry, grainy, photograph"
+    },
+    "stickman": {
+        "id": "stickman",
+        "name": "Stickman / Doodle Explainer",
+        "icon": "🖍️",
+        "desc": "Viral whiteboard sketch doodle & expressive stick figures",
+        "prompt_anchor": "minimalist stick figure doodle illustration, clean whiteboard sketch art, black ink outline drawing on clean solid background, simple expressive stickman character, viral explainer video style, highly legible, clever diagram drawing",
+        "negative": "photorealistic, detailed skin, 3d render, complex textures, blurry, photographic"
     },
     "anime": {
         "id": "anime",
@@ -84,6 +224,14 @@ STYLE_PRESETS = {
         "desc": "Mythical fantasy realms with enchanting atmospheric glow",
         "prompt_anchor": "epic high fantasy concept art, mystical glowing ethereal lighting, magical particles, grand scale atmospheric world, highly detailed digital painting, artstation trending",
         "negative": "modern cars, technology, blurry, low resolution, bad anatomy"
+    },
+    "custom_style": {
+        "id": "custom_style",
+        "name": "Custom Style Prompt",
+        "icon": "✨",
+        "desc": "User-defined custom artistic style prompt",
+        "prompt_anchor": "masterpiece, 8k resolution, highly detailed, visually stunning artistic composition",
+        "negative": "low quality, blurry, distorted"
     }
 }
 
@@ -144,14 +292,43 @@ def set_ai_video_progress(
 def split_script_into_scenes_rule_based(
     script_text: str,
     style_key: str = "cinematic",
-    character_desc: str = ""
+    character_desc: str = "",
+    video_type: str = "motion_cinematic",
+    niche: str = "history_mystery",
+    custom_niche_text: str = "",
+    custom_style_prompt: str = ""
 ) -> List[Dict[str, Any]]:
     """
     Intelligently breaks script into 4-6 second visual scenes without cutting sentences.
-    Generates rich, contextual visual prompts with character anchor and art style.
+    Generates rich, contextual visual prompts tailored to Video Type, Niche, and Visual Style.
     """
-    style_info = STYLE_PRESETS.get(style_key, STYLE_PRESETS["cinematic"])
-    anchor = style_info["prompt_anchor"]
+    if custom_style_prompt and custom_style_prompt.strip():
+        anchor = custom_style_prompt.strip()
+    else:
+        style_info = STYLE_PRESETS.get(style_key, STYLE_PRESETS["cinematic"])
+        anchor = style_info["prompt_anchor"]
+
+    # Framing / Camera cues based on Video Type
+    type_cue = ""
+    if video_type == "animation_2d" or style_key == "cartoon_2d":
+        type_cue = "2D animated cartoon scene composition"
+    elif video_type == "drama_story":
+        type_cue = "cinematic dialogue scene, expressive character interaction shot"
+    elif video_type == "talking_avatar":
+        type_cue = "expressive portrait medium close-up shot facing directly at camera"
+    elif video_type == "kids_animation" or style_key == "pixar":
+        type_cue = "3D Pixar fairytale scene framing"
+    elif style_key == "stickman":
+        type_cue = "clean minimalist stick figure doodle composition on plain background"
+    elif video_type == "stock_documentary":
+        type_cue = "authentic documentary camera framing, real-world archive feel"
+
+    # Genre / Niche mood cue
+    niche_cue = ""
+    if niche == "custom_niche" and custom_niche_text:
+        niche_cue = f"Theme: {custom_niche_text.strip()}"
+    elif niche in NICHES_CATALOG and niche != "custom_niche":
+        niche_cue = f"Atmosphere: {NICHES_CATALOG[niche]['name']}"
 
     clean_text = script_text.strip()
     # Remove bracket emotion tags like [laugh], [sigh], [pause] for scene text
@@ -211,6 +388,11 @@ def split_script_into_scenes_rule_based(
         else:
             prompt_parts.append(f"Scene illustrating: {stext[:80]}")
 
+        if type_cue:
+            prompt_parts.append(type_cue)
+        if niche_cue:
+            prompt_parts.append(niche_cue)
+
         prompt_parts.append(anchor)
         full_prompt = ", ".join(prompt_parts)
 
@@ -234,6 +416,10 @@ async def breakdown_script_with_gemini_or_fallback(
     script_text: str,
     style_key: str = "cinematic",
     character_desc: str = "",
+    video_type: str = "motion_cinematic",
+    niche: str = "history_mystery",
+    custom_niche_text: str = "",
+    custom_style_prompt: str = "",
     gemini_key: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """
@@ -242,19 +428,37 @@ async def breakdown_script_with_gemini_or_fallback(
     key = gemini_key or os.environ.get("GEMINI_API_KEY", "").strip()
     if not key:
         logger.info("No Gemini API key provided; using smart rule-based Scene Director.")
-        return split_script_into_scenes_rule_based(script_text, style_key, character_desc)
+        return split_script_into_scenes_rule_based(
+            script_text,
+            style_key=style_key,
+            character_desc=character_desc,
+            video_type=video_type,
+            niche=niche,
+            custom_niche_text=custom_niche_text,
+            custom_style_prompt=custom_style_prompt
+        )
 
-    style_info = STYLE_PRESETS.get(style_key, STYLE_PRESETS["cinematic"])
-    style_anchor = style_info["prompt_anchor"]
+    if custom_style_prompt and custom_style_prompt.strip():
+        style_anchor = custom_style_prompt.strip()
+    else:
+        style_info = STYLE_PRESETS.get(style_key, STYLE_PRESETS["cinematic"])
+        style_anchor = style_info["prompt_anchor"]
+
+    chosen_niche_label = custom_niche_text if (niche == "custom_niche" and custom_niche_text) else NICHES_CATALOG.get(niche, {}).get("name", "General")
+    chosen_type_label = VIDEO_TYPES.get(video_type, {}).get("name", "Cinematic Motion")
 
     system_instruction = f"""
 You are a master Hollywood film director and AI prompt engineer.
-Break down the given narration script into sequential cinematic scenes (each ~4-6 seconds of speech).
+Break down the given narration script into sequential scenes (each ~4-6 seconds of speech).
+Context:
+- Video Type: {chosen_type_label}
+- Niche/Genre: {chosen_niche_label}
+- Visual Art Style: {style_anchor}
+- Subject/Character: {character_desc if character_desc else 'cinematic subject'}
+
 For each scene, provide:
 1. "text": The exact verbatim spoken line(s) for this scene from the script.
-2. "prompt": A highly detailed English visual prompt for FLUX.1.
-   Include character: "{character_desc if character_desc else 'cinematic subject'}"
-   Include style: "{style_anchor}"
+2. "prompt": A highly detailed English visual prompt for FLUX.1 matching the Video Type and Niche.
    Describe composition, lighting, camera angle, facial emotion, environment.
 3. "motion": One of ["zoom_in_slow", "zoom_out_slow", "pan_left_right", "pan_right_left", "zoom_in_fast"].
 
@@ -312,7 +516,15 @@ Do NOT output markdown blocks or conversational text.
     except Exception as e:
         logger.warning(f"Gemini director call failed ({e}); falling back to smart rule-based breakdown.")
 
-    return split_script_into_scenes_rule_based(script_text, style_key, character_desc)
+    return split_script_into_scenes_rule_based(
+        script_text,
+        style_key=style_key,
+        character_desc=character_desc,
+        video_type=video_type,
+        niche=niche,
+        custom_niche_text=custom_niche_text,
+        custom_style_prompt=custom_style_prompt
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -510,6 +722,10 @@ async def run_ai_video_pipeline(
     aspect_ratio: str = "9:16",
     style_key: str = "cinematic",
     character_desc: str = "",
+    video_type: str = "motion_cinematic",
+    niche: str = "history_mystery",
+    custom_niche_text: str = "",
+    custom_style_prompt: str = "",
     voice_id: str = "ur-PK-AsadNeural",
     speed: float = 1.0,
     pitch: int = 0,
@@ -539,6 +755,10 @@ async def run_ai_video_pipeline(
             script_text=script_text,
             style_key=style_key,
             character_desc=character_desc,
+            video_type=video_type,
+            niche=niche,
+            custom_niche_text=custom_niche_text,
+            custom_style_prompt=custom_style_prompt,
             gemini_key=gemini_key
         )
 
@@ -695,6 +915,10 @@ async def run_ai_video_pipeline(
         "total_duration": total_audio_duration,
         "aspect_ratio": aspect_ratio,
         "style": style_key,
+        "video_type": video_type,
+        "niche": niche,
+        "custom_niche_text": custom_niche_text,
+        "custom_style_prompt": custom_style_prompt,
         "voice": voice_id,
         "segments_for_editor": segments,
         "raw_words": words
