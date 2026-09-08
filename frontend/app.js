@@ -2563,51 +2563,52 @@ async function handleGenerateCloning() {
 }
 
 function renderPremiumLanguageBoxes() {
-  const grid = $("premiumLangGrid");
-  if (!grid) return;
-  clear(grid);
+  // Populate the language filter dropdown instead of tile grid
+  const langSelect = $("pfLanguage");
+  if (!langSelect) return;
+
+  // Remember current selection
+  const currentVal = langSelect.value || "all";
+
+  // Clear and rebuild options
+  while (langSelect.options.length > 1) langSelect.remove(1);
 
   const langs = voiceStudioState.premiumLanguages || [];
   langs.forEach(lang => {
-    const isActive = (voiceStudioState.selectedLanguage || "en") === lang.id;
-
-    const tile = el("button", {
-      cls: "premium-lang-tile" + (isActive ? " is-active" : ""),
-      attrs: { type: "button", title: `Select ${lang.name}` },
-      on: {
-        click: () => selectPremiumLanguage(lang.id)
-      }
-    }, [
-      el("div", { cls: "plt-top" }, [
-        el("span", { cls: "plt-flag", text: lang.flag || "🌐" }),
-        el("span", { cls: "plt-count", text: `${lang.count || 0} voices` })
-      ]),
-      el("div", { cls: "plt-name", text: lang.name || lang.id }),
-      el("div", { cls: "plt-engine", text: `💎 ${lang.badge || lang.engine_label}` })
-    ]);
-
-    grid.appendChild(tile);
+    const opt = document.createElement("option");
+    opt.value = lang.id;
+    opt.textContent = `${lang.flag} ${lang.name} (${lang.count})`;
+    langSelect.appendChild(opt);
   });
+
+  // Restore selection
+  langSelect.value = currentVal;
+
+  // Wire filter events (only once)
+  if (!voiceStudioState._premiumFiltersWired) {
+    voiceStudioState._premiumFiltersWired = true;
+
+    langSelect.addEventListener("change", () => renderKokoroVoiceList());
+
+    const genderSelect = $("pfGender");
+    if (genderSelect) genderSelect.addEventListener("change", () => renderKokoroVoiceList());
+
+    const searchInput = $("pfSearch");
+    if (searchInput) searchInput.addEventListener("input", () => renderKokoroVoiceList());
+  }
+
+  renderKokoroVoiceList();
 }
 
 function selectPremiumLanguage(langId) {
-  voiceStudioState.selectedLanguage = langId;
-  renderPremiumLanguageBoxes();
-
-  const langObj = (voiceStudioState.premiumLanguages || []).find(l => l.id === langId);
-  if ($("premiumActiveLangTitle")) {
-    $("premiumActiveLangTitle").textContent = langObj ? `${langObj.flag} ${langObj.name}` : "Studio Voices";
-  }
-  if ($("premiumActiveLangCount")) {
-    $("premiumActiveLangCount").textContent = `${(langObj && langObj.count) || 0} voices`;
-  }
+  const langSelect = $("pfLanguage");
+  if (langSelect) langSelect.value = langId;
+  renderKokoroVoiceList();
 
   // Auto-select first voice for this language
   const voices = (voiceStudioState.premiumVoices || []).filter(v => v.language_id === langId);
   if (voices.length) {
     selectKokoroVoice(voices[0]);
-  } else {
-    renderKokoroVoiceList();
   }
 }
 
@@ -2616,15 +2617,40 @@ function renderKokoroVoiceList() {
   if (!container) return;
   clear(container);
 
-  const currentLang = voiceStudioState.selectedLanguage || "en";
   const allVoices = voiceStudioState.premiumVoices || [];
-  const voices = allVoices.filter(v => v.language_id === currentLang);
+
+  // Read filter values
+  const langFilter = $("pfLanguage") ? $("pfLanguage").value : "all";
+  const genderFilter = $("pfGender") ? $("pfGender").value : "all";
+  const searchQuery = $("pfSearch") ? $("pfSearch").value.trim().toLowerCase() : "";
+
+  // Apply filters
+  let voices = allVoices;
+
+  if (langFilter !== "all") {
+    voices = voices.filter(v => v.language_id === langFilter);
+  }
+  if (genderFilter !== "all") {
+    voices = voices.filter(v => v.gender === genderFilter);
+  }
+  if (searchQuery) {
+    voices = voices.filter(v =>
+      (v.name || "").toLowerCase().includes(searchQuery) ||
+      (v.accent || "").toLowerCase().includes(searchQuery) ||
+      (v.category || "").toLowerCase().includes(searchQuery)
+    );
+  }
+
+  // Update result count
+  if ($("pfResultCount")) {
+    $("pfResultCount").textContent = `${voices.length} voice${voices.length !== 1 ? "s" : ""}`;
+  }
 
   if (!voices.length) {
     container.appendChild(el("div", {
       cls: "hint",
       style: { padding: "1.5rem 0.5rem", textAlign: "center", fontSize: "0.78rem" },
-      text: "No voices found for this language."
+      text: "No voices match your filters. Try changing language or gender."
     }));
     return;
   }
@@ -2654,7 +2680,7 @@ function renderKokoroVoiceList() {
         el("span", { cls: "kokoro-v-flag", text: v.flag || "🎙️" }),
         el("div", { cls: "kokoro-v-meta" }, [
           el("div", { cls: "kokoro-v-name", text: v.name || v.id }),
-          el("div", { cls: "kokoro-v-desc", text: `${v.gender} • ${v.category || v.accent}` }),
+          el("div", { cls: "kokoro-v-desc", text: `${v.flag} ${v.accent} • ${v.gender} • ${v.category}` }),
           el("span", { cls: "kokoro-v-engine-pill", text: v.engine_badge || "Studio HD" })
         ])
       ]),

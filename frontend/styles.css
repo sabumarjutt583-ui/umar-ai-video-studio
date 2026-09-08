@@ -1385,87 +1385,57 @@ table.grid td.rownum { color: var(--text-dim); font-variant-numeric: tabular-num
 }
 
 /* Multi-Language Studio Matrix Tiles Grid */
-.premium-lang-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.45rem;
-  max-height: 235px;
-  overflow-y: auto;
-  padding-right: 0.2rem;
-}
-
-.premium-lang-tile {
+/* Premium Voice Filter Bar */
+.premium-filter-bar {
   display: flex;
   flex-direction: column;
-  padding: 0.5rem 0.55rem;
-  background: rgba(255, 255, 255, 0.03);
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.pf-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.pf-select {
+  flex: 1;
+  padding: 0.42rem 0.55rem;
+  font-size: 0.72rem;
+  background: rgba(0, 0, 0, 0.35);
+  color: #e2e8f0;
   border: 1px solid var(--line);
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.18s ease;
-  position: relative;
-  text-align: left;
+  transition: border-color 0.2s;
+  outline: none;
+  appearance: auto;
 }
 
-.premium-lang-tile:hover {
-  background: rgba(139, 92, 246, 0.1);
-  border-color: rgba(139, 92, 246, 0.4);
-  transform: translateY(-1px);
+.pf-select:hover,
+.pf-select:focus {
+  border-color: rgba(139, 92, 246, 0.5);
 }
 
-.premium-lang-tile.is-active {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.22), rgba(16, 185, 129, 0.15));
-  border-color: #a78bfa;
-  box-shadow: 0 0 12px rgba(139, 92, 246, 0.35);
+.pf-search {
+  flex: 1;
+  padding: 0.42rem 0.55rem;
+  font-size: 0.72rem;
+  background: rgba(0, 0, 0, 0.35);
+  color: #e2e8f0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s;
 }
 
-.plt-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.25rem;
-}
-
-.plt-flag {
-  font-size: 1.1rem;
-  line-height: 1;
-}
-
-.plt-count {
-  font-size: 0.62rem;
+.pf-search::placeholder {
   color: var(--text-dim);
-  background: rgba(255, 255, 255, 0.06);
-  padding: 0.1rem 0.4rem;
-  border-radius: 999px;
-  font-weight: 600;
 }
 
-.premium-lang-tile.is-active .plt-count {
-  background: rgba(167, 139, 250, 0.25);
-  color: #c4b5fd;
-}
-
-.plt-name {
-  font-size: 0.74rem;
-  font-weight: 700;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 0.15rem;
-}
-
-.plt-engine {
-  font-size: 0.62rem;
-  color: #10b981;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.premium-lang-tile.is-active .plt-engine {
-  color: #34d399;
+.pf-search:focus {
+  border-color: rgba(139, 92, 246, 0.5);
 }
 
 /* Studio Voices List */
@@ -1473,7 +1443,7 @@ table.grid td.rownum { color: var(--text-dim); font-variant-numeric: tabular-num
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-  max-height: 290px;
+  max-height: 420px;
   overflow-y: auto;
   padding-right: 0.2rem;
 }

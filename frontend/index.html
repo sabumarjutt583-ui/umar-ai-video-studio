@@ -1311,34 +1311,41 @@
         </aside>
       </div>
     </div> <!-- END #pageCloning -->
-
     <!-- ==================== SUB-PAGE 3: KOKORO-82M STUDIO HD ==================== -->
     <div class="v-subpage" id="pageKokoro" hidden>
       <div class="voice-studio-grid">
 
-        <!-- Left: Multi-Language Studio Matrix & Voices -->
+        <!-- Left: Unified Premium Voice Browser with Filters -->
         <aside class="voice-sidebar">
           <div class="voice-clone-box">
             <div class="card-head-simple" style="margin-bottom:0.6rem">
               <div>
-                <strong style="font-size:0.85rem">🌍 Studio Languages</strong>
-                <small style="display:block;font-size:0.68rem;color:var(--text-dim)">Click a language box to view voices</small>
+                <strong style="font-size:0.85rem">🌟 Studio HD Voices</strong>
+                <small style="display:block;font-size:0.68rem;color:var(--text-dim)">Browse & filter all premium voices</small>
               </div>
               <span class="pill ok" style="font-size:0.62rem">100% FREE</span>
             </div>
 
-            <!-- Language Selection Grid (Boxes) -->
-            <div class="premium-lang-grid" id="premiumLangGrid">
-              <!-- Dynamically populated 12 language boxes -->
+            <!-- Filter Bar -->
+            <div class="premium-filter-bar" id="premiumFilterBar">
+              <div class="pf-row">
+                <select class="pf-select" id="pfLanguage">
+                  <option value="all">🌐 All Languages</option>
+                </select>
+                <select class="pf-select" id="pfGender">
+                  <option value="all">👤 All Genders</option>
+                  <option value="Male">👨 Male</option>
+                  <option value="Female">👩 Female</option>
+                </select>
+              </div>
+              <div class="pf-row">
+                <input type="text" class="pf-search" id="pfSearch" placeholder="🔍 Search voice name..." autocomplete="off">
+                <span id="pfResultCount" class="pill" style="font-size:0.62rem;background:rgba(255,255,255,0.08);white-space:nowrap">0 voices</span>
+              </div>
             </div>
 
-            <div class="premium-voices-header" style="margin-top:0.85rem;margin-bottom:0.4rem;display:flex;align-items:center;justify-content:space-between">
-              <strong id="premiumActiveLangTitle" style="font-size:0.75rem;color:#c4b5fd;text-transform:uppercase;letter-spacing:0.5px">Voices</strong>
-              <span id="premiumActiveLangCount" class="pill" style="font-size:0.65rem;background:rgba(255,255,255,0.08)">0 voices</span>
-            </div>
-
-            <!-- Voices List for Selected Language -->
-            <div class="kokoro-voice-list" id="kokoroVoiceList">
+            <!-- All Voices List (scrollable) -->
+            <div class="kokoro-voice-list" id="kokoroVoiceList" style="max-height:420px">
               <!-- Dynamically populated -->
             </div>
           </div>
@@ -1346,7 +1353,7 @@
           <div class="voice-sidebar-card">
             <strong>🎯 Best Engine per Language</strong>
             <p class="hint" style="font-size:0.75rem;margin-top:0.3rem">
-              English, Japanese & Chinese use <strong>Kokoro-82M (24kHz CD Audio)</strong>. Urdu, Arabic, Korean & Turkish use <strong>Broadcast Master Neural</strong>. Highest fidelity guaranteed.
+              English, Japanese &amp; Chinese use <strong>Kokoro-82M (24kHz CD Audio)</strong>. Urdu, Arabic, Korean &amp; Turkish use <strong>Broadcast Master Neural</strong>. Highest fidelity guaranteed.
             </p>
           </div>
         </aside>
