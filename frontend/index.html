@@ -1339,43 +1339,8 @@
           </div>
         </aside>
 
-        <!-- Center: Voice Cards + Script Editor -->
+        <!-- Center: Script Canvas -->
         <main class="voice-canvas">
-          <div class="voice-clone-box" style="margin-bottom:1rem">
-            <div class="card-head-simple" style="margin-bottom:0.6rem">
-              <div>
-                <strong style="font-size:0.85rem">🌟 Studio HD Voices</strong>
-                <small style="display:block;font-size:0.68rem;color:var(--text-dim)">Browse & filter all premium voices</small>
-              </div>
-              <span class="pill ok" style="font-size:0.62rem">100% FREE</span>
-            </div>
-
-            <!-- Filter Bar -->
-            <div class="premium-filter-bar" id="premiumFilterBar">
-              <div class="pf-row">
-                <select class="pf-select" id="pfLanguage">
-                  <option value="all">🌐 All Languages</option>
-                </select>
-                <select class="pf-select" id="pfGender">
-                  <option value="all">👤 All Genders</option>
-                  <option value="Male">👨 Male</option>
-                  <option value="Female">👩 Female</option>
-                </select>
-              </div>
-              <div class="pf-row">
-                <input type="text" class="pf-search" id="pfSearch" placeholder="🔍 Search voice name..." autocomplete="off">
-                <span id="pfResultCount" class="pill" style="font-size:0.62rem;background:rgba(255,255,255,0.08);white-space:nowrap">0 voices</span>
-              </div>
-            </div>
-
-            <!-- Voice Cards Grid (same style as Free Voices library) -->
-            <div class="vlib-grid-container" id="kokoroGridContainer" style="max-height:320px">
-              <div class="vlib-cards-grid" id="kokoroVoiceList">
-                <!-- Dynamically populated -->
-              </div>
-            </div>
-          </div>
-
           <div class="scenario-bar">
             <span class="scenario-lbl">Quick Starters:</span>
             <div class="scenario-chips">
@@ -1387,7 +1352,7 @@
           </div>
 
           <div class="script-editor-box">
-            <textarea id="kokoroScriptTextarea" class="script-textarea" placeholder="Type or paste your narration script here for Kokoro-82M Studio HD..." rows="12"></textarea>
+            <textarea id="kokoroScriptTextarea" class="script-textarea" placeholder="Type or paste your narration script here for Premium Studio HD speech..." rows="12"></textarea>
             <div class="script-footer">
               <div class="script-char-count">
                 <span id="kokoroCharCount">0</span> / 20,000 characters
@@ -1420,7 +1385,7 @@
             <div class="result-header">
               <div class="result-info">
                 <strong style="color:var(--text)">🎉 Studio HD Voice Ready!</strong>
-                <small class="hint" id="kokoroResultMeta">Duration: 0.0s • 24kHz CD Audio</small>
+                <small class="hint" id="kokoroResultMeta">Duration: 0.0s • Studio HD</small>
               </div>
               <button class="btn btn-primary" id="btnKokoroSendToTimeline" type="button" style="background:linear-gradient(135deg,#10b981,#059669);border:none">
                 🎬 Send to Video Timeline
@@ -1428,44 +1393,110 @@
             </div>
             <audio id="kokoroAudioPlayer" controls style="width:100%;height:38px;outline:none"></audio>
             <div style="display:flex;gap:0.5rem;margin-top:0.6rem">
-              <a id="kokoroDownloadAudioLink" class="btn btn-ghost btn-sm" href="#" download="kokoro_studio.mp3">📥 Download MP3</a>
+              <a id="kokoroDownloadAudioLink" class="btn btn-ghost btn-sm" href="#" download="studio_hd_voice.mp3">📥 Download MP3</a>
               <a id="kokoroDownloadSrtLink" class="btn btn-ghost btn-sm" href="#" download="subtitles.srt">📄 Download Subtitles (SRT)</a>
             </div>
           </div>
         </main>
 
-        <!-- Right: Active Voice & Speed Slider -->
+        <!-- Right: Inspector Panel (Identical settings to Free Voices) -->
         <aside class="voice-inspector">
-          <div class="voice-select-box">
-            <div class="card-head-simple" style="margin-bottom:0.4rem">
-              <span style="font-size:0.75rem;font-weight:700;color:var(--text-dim)">SELECTED STUDIO VOICE</span>
-            </div>
-            <div class="voice-selector-card-btn" id="kokoroActiveCard">
-              <div class="vpc-info">
-                <span class="vpc-flag" id="kokoroActiveFlag">🇺🇸</span>
-                <div>
-                  <strong id="kokoroActiveName">Adam (Studio)</strong>
-                  <small id="kokoroActiveMeta">American (US) • Male • Deep Narration</small>
+          <div class="tabs" style="margin-bottom:1rem">
+            <button class="tab is-active" id="tabKokoroSettings" type="button">⚙️ Settings</button>
+            <button class="tab" id="tabKokoroHistory" type="button">🕒 History</button>
+          </div>
+
+          <!-- Tab 1: Voice Settings Pane -->
+          <div class="inspector-pane" id="paneKokoroSettings">
+            <!-- Filterable Voice Selector Card Trigger -->
+            <div class="voice-select-box">
+              <div class="card-head-simple" style="margin-bottom:0.4rem">
+                <span style="font-size:0.75rem;font-weight:700;color:var(--text-dim)">SELECTED VOICE</span>
+                <button class="btn btn-ghost btn-xs" id="btnChangeKokoroVoiceModal" type="button" style="color:#c4b5fd;font-weight:600">🔍 Filter Voices (47+) →</button>
+              </div>
+              <div class="voice-selector-card-btn" id="kokoroVoiceCardTrigger" title="Click to open Voice Library with filters">
+                <div class="vpc-info">
+                  <span class="vpc-flag" id="kokoroVpcFlag">🇺🇸</span>
+                  <div>
+                    <div style="display:flex;align-items:center;gap:0.4rem">
+                      <strong id="kokoroVpcName">Adam (Studio)</strong>
+                      <span id="kokoroVpcStarIcon" title="Toggle Favorite" style="cursor:pointer;font-size:0.9rem">⭐</span>
+                    </div>
+                    <small id="kokoroVpcCategory">United States • English • Male</small>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.4rem">
+                  <button class="icon-btn" id="btnPreviewKokoroAudio" type="button" title="Listen to Voice Sample">▶</button>
+                  <span style="color:var(--text-dim);font-size:0.85rem">❯</span>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="voice-slider-group" style="margin-top:1rem">
-            <div class="slider-row">
-              <div class="slider-label">
-                <span>Speaking Speed</span>
-                <strong id="valKokoroSpeed">1.0x</strong>
+            <!-- Emotion Tone Dropdown -->
+            <label class="field" style="margin-top:1rem">
+              <span>Emotion / Vocal Tone</span>
+              <select id="kokoroEmotionSelect">
+                <option value="neutral">😐 Neutral (Default)</option>
+                <option value="cheerful">😄 Cheerful & Friendly</option>
+                <option value="excited">🔥 High Energy & Excited</option>
+                <option value="sad">😢 Serious / Emotional</option>
+                <option value="whispering">🤫 Whispering & Confidential</option>
+                <option value="documentary">📜 Documentary / Storyteller</option>
+              </select>
+            </label>
+
+            <!-- Sliders: Speed, Pitch, Expressiveness, Volume Boost -->
+            <div class="voice-slider-group">
+              <div class="slider-row">
+                <div class="slider-label">
+                  <span>Speed</span>
+                  <strong id="valKokoroSpeed">1.0x</strong>
+                </div>
+                <input type="range" id="sliderKokoroSpeed" min="0.5" max="2.0" step="0.05" value="1.0">
               </div>
-              <input type="range" id="sliderKokoroSpeed" min="0.6" max="1.8" step="0.05" value="1.0">
+
+              <div class="slider-row">
+                <div class="slider-label">
+                  <span>Pitch</span>
+                  <strong id="valKokoroPitch">0 Hz</strong>
+                </div>
+                <input type="range" id="sliderKokoroPitch" min="-20" max="20" step="1" value="0">
+              </div>
+
+              <div class="slider-row">
+                <div class="slider-label">
+                  <span>Expressiveness / Emotion Depth</span>
+                  <strong id="valKokoroExpress">85%</strong>
+                </div>
+                <input type="range" id="sliderKokoroExpress" min="0" max="100" step="5" value="85">
+              </div>
+
+              <div class="slider-row">
+                <div class="slider-label">
+                  <span>Volume Boost</span>
+                  <strong id="valKokoroVolume">0 dB</strong>
+                </div>
+                <input type="range" id="sliderKokoroVolume" min="-6" max="6" step="1" value="0">
+              </div>
+            </div>
+
+            <div class="voice-credit-pill">
+              <span class="vcp-icon">✨</span>
+              <div class="vcp-text">
+                <strong>Unlimited Free Generations</strong>
+                <small>Studio Broadcast HD Quality</small>
+              </div>
             </div>
           </div>
 
-          <div class="voice-credit-pill" style="margin-top:1.2rem">
-            <span class="vcp-icon" id="kokoroActiveEngineIcon">💎</span>
-            <div class="vcp-text">
-              <strong id="kokoroActiveEngineTitle">Kokoro-82M Studio HD</strong>
-              <small id="kokoroActiveEngineSub">Multi-Engine Studio Matrix</small>
+          <!-- Tab 2: History Pane -->
+          <div class="inspector-pane" id="paneKokoroHistory" hidden>
+            <div class="card-head-simple">
+              <span style="font-size:0.85rem">Recent Voiceovers</span>
+              <button class="btn btn-ghost btn-sm" id="btnKokoroClearHistory" type="button">Clear</button>
+            </div>
+            <div class="tts-history-list" id="kokoroHistoryList">
+              <p class="hint" style="text-align:center;padding:1.5rem 0">No audio generated in this session yet.</p>
             </div>
           </div>
         </aside>
@@ -1724,7 +1755,7 @@
     <header class="modal-head">
       <div>
         <h3 style="font-size:1.15rem;display:flex;align-items:center;gap:0.5rem">
-          <span>🎙️</span> <span>Select Voice Library</span>
+          <span>🎙️</span> <span id="vlibModalTitle">Select Voice Library</span>
         </h3>
         <small class="hint" id="vlibCountHint">400+ Neural Voices across 40+ languages</small>
       </div>

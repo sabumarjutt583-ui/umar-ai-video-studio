@@ -817,6 +817,8 @@ async def generate_kokoro(request: Request,
                           text: str = Body(..., embed=True),
                           voice: str = Body("am_adam", embed=True),
                           speed: float = Body(1.0, embed=True),
+                          pitch: int = Body(0, embed=True),
+                          emotion: Optional[str] = Body(None, embed=True),
                           session_id: Optional[str] = Body(None, embed=True)):
     """Generates studio-grade speech via the best engine for the selected voice."""
     clean = (text or "").strip()
@@ -859,7 +861,7 @@ async def generate_kokoro(request: Request,
                 text=clean,
                 voice=voice,
                 speed=float(speed or 1.0),
-                pitch=0,
+                pitch=int(pitch or 0),
                 output_dir=out_dir,
                 file_prefix="premium_studio"
             )

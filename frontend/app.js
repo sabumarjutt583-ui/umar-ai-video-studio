@@ -1802,15 +1802,22 @@ function setupVoiceFilterDropdowns() {
   const countrySelect = $("vlibCountryFilter");
   if (!langSelect || !countrySelect) return;
 
-  const all = (voiceStudioState.allVoices || voiceStudioState.voices || []);
+  const isPremium = voiceStudioState.libraryMode === "premium";
+  const all = isPremium
+    ? (voiceStudioState.premiumVoices || [])
+    : (voiceStudioState.allVoices || voiceStudioState.voices || []);
+
+  const langMap = {};
+  (voiceStudioState.premiumLanguages || []).forEach(l => { langMap[l.id] = l.name; });
 
   // 1. Extract unique languages sorted alphabetically
-  const langMap = new Map();
+  const langSet = new Map();
   all.forEach(v => {
-    const l = (v.language || "").trim();
-    if (l) langMap.set(l.toLowerCase(), l);
+    let l = isPremium ? (langMap[v.language_id] || v.accent || "") : (v.language || "");
+    l = (l || "").trim();
+    if (l) langSet.set(l.toLowerCase(), l);
   });
-  const sortedLangs = Array.from(langMap.values()).sort((a, b) => a.localeCompare(b));
+  const sortedLangs = Array.from(langSet.values()).sort((a, b) => a.localeCompare(b));
 
   clear(langSelect);
   langSelect.appendChild(el("option", { attrs: { value: "all" }, text: `All Languages (${sortedLangs.length})` }));
@@ -1819,16 +1826,17 @@ function setupVoiceFilterDropdowns() {
   });
 
   // 2. Extract unique countries sorted alphabetically
-  const countryMap = new Map();
+  const countrySet = new Map();
   all.forEach(v => {
-    const c = (v.country || "").trim();
+    let c = isPremium ? (v.accent || v.country || "") : (v.country || "");
+    c = (c || "").trim();
     if (c) {
-      if (!countryMap.has(c.toLowerCase())) {
-        countryMap.set(c.toLowerCase(), { name: c, flag: v.flag || "📍" });
+      if (!countrySet.has(c.toLowerCase())) {
+        countrySet.set(c.toLowerCase(), { name: c, flag: v.flag || "📍" });
       }
     }
   });
-  const sortedCountries = Array.from(countryMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  const sortedCountries = Array.from(countrySet.values()).sort((a, b) => a.name.localeCompare(b.name));
 
   clear(countrySelect);
   countrySelect.appendChild(el("option", { attrs: { value: "all" }, text: `All Countries (${sortedCountries.length})` }));
@@ -1919,10 +1927,10 @@ async function initVoiceStudio() {
   setupSliderDisplay("sliderTtsVolume", "valTtsVolume", (v) => (Number(v) >= 0 ? "+" : "") + v + " dB");
 
   // 7. Voice Modal Triggers
-  on("voiceCardTrigger", "click", openVoiceLibraryModal);
-  on("btnChangeVoiceModal", "click", openVoiceLibraryModal);
-  on("btnElevenChangeVoice", "click", openVoiceLibraryModal);
-  on("elevenVoiceTrigger", "click", openVoiceLibraryModal);
+  on("voiceCardTrigger", "click", () => openVoiceLibraryModal("free"));
+  on("btnChangeVoiceModal", "click", () => openVoiceLibraryModal("free"));
+  on("kokoroVoiceCardTrigger", "click", () => openVoiceLibraryModal("premium"));
+  on("btnChangeKokoroVoiceModal", "click", () => openVoiceLibraryModal("premium"));
   on("voiceLibraryModalClose", "click", closeVoiceLibraryModal);
   on("btnVlibCloseFooter", "click", closeVoiceLibraryModal);
 
@@ -2053,7 +2061,7 @@ async function initVoiceStudio() {
   on("btnCloneGenerate", "click", handleGenerateCloning);
   on("btnCloneSendToTimeline", "click", handleSendTtsToTimeline);
 
-  // 13. Kokoro-82M Studio Setup
+  // 13. Studio HD Setup
   const kokoroTextarea = $("kokoroScriptTextarea");
   if (kokoroTextarea) {
     kokoroTextarea.addEventListener("input", () => {
@@ -2066,11 +2074,38 @@ async function initVoiceStudio() {
       if ($("kokoroCharCount")) $("kokoroCharCount").textContent = "0";
     }
   });
+
+  // Modal triggers for Studio HD
+  on("kokoroVoiceCardTrigger", "click", () => openVoiceLibraryModal("premium"));
+  on("btnChangeKokoroVoiceModal", "click", () => openVoiceLibraryModal("premium"));
+  on("btnPreviewKokoroAudio", "click", (e) => {
+    e.stopPropagation();
+    if (voiceStudioState.selectedKokoroVoice) {
+      playKokoroAudition(voiceStudioState.selectedKokoroVoice);
+    }
+  });
+  on("kokoroVpcStarIcon", "click", (e) => {
+    e.stopPropagation();
+    if (voiceStudioState.selectedKokoroVoice) {
+      toggleFavoriteVoice(voiceStudioState.selectedKokoroVoice.id);
+    }
+  });
+
+  // Inspector Tabs (Settings vs History)
+  on("tabKokoroSettings", "click", () => switchKokoroInspectorTab("settings"));
+  on("tabKokoroHistory", "click", () => switchKokoroInspectorTab("history"));
+  on("btnKokoroClearHistory", "click", clearKokoroHistory);
+
+  // Sliders for Studio HD
   setupSliderDisplay("sliderKokoroSpeed", "valKokoroSpeed", (v) => Number(v).toFixed(2) + "x");
+  setupSliderDisplay("sliderKokoroPitch", "valKokoroPitch", (v) => (Number(v) >= 0 ? "+" : "") + v + " Hz");
+  setupSliderDisplay("sliderKokoroExpress", "valKokoroExpress", (v) => v + "%");
+  setupSliderDisplay("sliderKokoroVolume", "valKokoroVolume", (v) => (Number(v) >= 0 ? "+" : "") + v + " dB");
+
   on("btnKokoroGenerate", "click", handleGenerateKokoro);
   on("btnKokoroSendToTimeline", "click", handleSendTtsToTimeline);
 
-  // Quick Starters for Kokoro
+  // Quick Starters for Studio HD
   $$("#pageKokoro .scenario-chip").forEach(chip => {
     chip.addEventListener("click", () => {
       loadKokoroScenarioTemplate(chip.dataset.scenario);
@@ -2117,21 +2152,53 @@ function switchVoiceSubpage(subpage) {
     const t = $("currentViewTitle");
     if (t) t.textContent = "🧬 F5-TTS AI Voice Cloning Lab";
   } else if (isKokoro) {
-    updateVoiceStudioHeader("🌟", "Premium Studio Voices (Multi-Language Matrix)", "Studio HD broadcast-quality voices. Select a language box below to explore high-fidelity curated voices powered by Kokoro-82M and Master Neural models.");
+    updateVoiceStudioHeader("🌟", "Premium Studio Voices", "Studio HD broadcast-quality voices across 12 global languages with natural emotional depth.");
     const t = $("currentViewTitle");
-    if (t) t.textContent = "🌟 Premium Voices Studio (Multi-Language Matrix)";
+    if (t) t.textContent = "🌟 Premium Voices Studio (Studio HD)";
   }
 }
 
 
 /* ---------------- Voice Library Modal Controls ---------------- */
-function openVoiceLibraryModal() {
+function openVoiceLibraryModal(mode = "free") {
+  voiceStudioState.libraryMode = mode;
   const modal = $("voiceLibraryModal");
   if (!modal) return;
   modal.hidden = false;
+
+  // Reset filter state
+  voiceStudioState.filter = {
+    search: "",
+    gender: "all",
+    lang: "all",
+    country: "all",
+    favOnly: false
+  };
+
+  const searchInput = $("vlibSearchInput");
+  if (searchInput) {
+    searchInput.value = "";
+    if ($("btnVlibClearSearch")) $("btnVlibClearSearch").style.display = "none";
+  }
+  $$(".vlib-pill-btn").forEach(b => {
+    b.classList.toggle("is-active", (b.dataset.gender || "all") === "all");
+  });
+  if ($("vlibBtnFavs")) $("vlibBtnFavs").classList.remove("is-active");
+
+  const titleEl = $("vlibModalTitle");
+  const hintEl = $("vlibCountHint");
+  if (mode === "premium") {
+    if (titleEl) titleEl.textContent = "Select Studio HD Voice";
+    if (hintEl) hintEl.textContent = "47 Studio HD Voices across 12 languages (100% Free)";
+  } else {
+    if (titleEl) titleEl.textContent = "Select Voice Library";
+    if (hintEl) hintEl.textContent = "400+ Neural Voices across 40+ languages";
+  }
+
+  setupVoiceFilterDropdowns();
   updateFavoritesBadge();
   renderVoiceLibraryCards();
-  const searchInput = $("vlibSearchInput");
+
   if (searchInput) {
     setTimeout(() => searchInput.focus(), 80);
   }
@@ -2151,20 +2218,29 @@ function renderVoiceLibraryCards() {
   if (!grid) return;
   clear(grid);
 
+  const isPremium = voiceStudioState.libraryMode === "premium";
   const filter = voiceStudioState.filter;
-  const list = (voiceStudioState.allVoices || voiceStudioState.voices || []);
+  const list = isPremium
+    ? (voiceStudioState.premiumVoices || [])
+    : (voiceStudioState.allVoices || voiceStudioState.voices || []);
+
+  const langMap = {};
+  (voiceStudioState.premiumLanguages || []).forEach(l => { langMap[l.id] = l.name; });
 
   const filtered = list.filter(v => {
+    const vLang = (isPremium ? (langMap[v.language_id] || v.accent || "") : (v.language || "")).toLowerCase();
+    const vCountry = (isPremium ? (v.accent || v.country || "") : (v.country || "")).toLowerCase();
+    const vCode = (v.country_code || "").toLowerCase();
+
     // 1. Search Query
     if (filter.search) {
       const q = filter.search;
       const matchName = (v.name || "").toLowerCase().includes(q);
-      const matchLang = (v.language || "").toLowerCase().includes(q);
-      const matchCountry = (v.country || "").toLowerCase().includes(q);
-      const matchLocale = (v.locale || "").toLowerCase().includes(q);
+      const matchLang = vLang.includes(q);
+      const matchCountry = vCountry.includes(q);
       const matchCat = (v.category || "").toLowerCase().includes(q);
       const matchId = (v.id || "").toLowerCase().includes(q);
-      if (!matchName && !matchLang && !matchCountry && !matchLocale && !matchCat && !matchId) return false;
+      if (!matchName && !matchLang && !matchCountry && !matchCat && !matchId) return false;
     }
 
     // 2. Gender
@@ -2180,14 +2256,11 @@ function renderVoiceLibraryCards() {
 
     // 4. Language Filter
     if (filter.lang !== "all") {
-      const vLang = (v.language || "").toLowerCase();
       if (vLang !== filter.lang && !vLang.includes(filter.lang)) return false;
     }
 
     // 5. Country Filter
     if (filter.country !== "all") {
-      const vCountry = (v.country || "").toLowerCase();
-      const vCode = (v.country_code || "").toLowerCase();
       if (vCountry !== filter.country && vCode !== filter.country) return false;
     }
 
@@ -2210,8 +2283,12 @@ function renderVoiceLibraryCards() {
   }
 
   filtered.forEach(v => {
-    const isSelected = voiceStudioState.selectedVoice && voiceStudioState.selectedVoice.id === v.id;
+    const isSelected = isPremium
+      ? (voiceStudioState.selectedKokoroVoice && voiceStudioState.selectedKokoroVoice.id === v.id)
+      : (voiceStudioState.selectedVoice && voiceStudioState.selectedVoice.id === v.id);
     const isFav = voiceStudioState.favorites.has(v.id);
+    const displayLang = isPremium ? (langMap[v.language_id] || v.accent || "Studio") : (v.language || "Neural");
+    const displayCountry = isPremium ? (v.accent || "Global") : (v.country || "Global");
 
     const starBtn = el("button", {
       cls: "vlib-star-btn" + (isFav ? " is-fav" : ""),
@@ -2232,7 +2309,11 @@ function renderVoiceLibraryCards() {
       on: {
         click: (e) => {
           e.stopPropagation();
-          playVoicePreviewAudio(v);
+          if (isPremium) {
+            playKokoroAudition(v);
+          } else {
+            playVoicePreviewAudio(v);
+          }
         }
       }
     });
@@ -2244,7 +2325,11 @@ function renderVoiceLibraryCards() {
       on: {
         click: (e) => {
           e.stopPropagation();
-          selectVoiceFromLibrary(v);
+          if (isPremium) {
+            selectKokoroVoice(v);
+          } else {
+            selectVoiceFromLibrary(v);
+          }
         }
       }
     });
@@ -2252,23 +2337,29 @@ function renderVoiceLibraryCards() {
     const card = el("div", {
       cls: "vlib-card" + (isSelected ? " is-selected" : ""),
       on: {
-        click: () => selectVoiceFromLibrary(v)
+        click: () => {
+          if (isPremium) {
+            selectKokoroVoice(v);
+          } else {
+            selectVoiceFromLibrary(v);
+          }
+        }
       }
     }, [
       el("div", { cls: "vlib-card-top" }, [
         el("span", { cls: "vlib-country-badge" }, [
           el("span", { cls: "flag", text: v.flag || "🎙️" }),
-          el("span", { text: v.country || "Global" })
+          el("span", { text: displayCountry })
         ]),
         starBtn
       ]),
       el("div", { cls: "vlib-card-main" }, [
         el("div", { cls: "vlib-voice-name", text: v.name || v.id }),
         el("div", { cls: "vlib-badges-row" }, [
-          el("span", { cls: "vlib-tag-pill vlib-tag-lang", text: `🌐 ${v.language || "Neural"}` }),
+          el("span", { cls: "vlib-tag-pill vlib-tag-lang", text: `🌐 ${displayLang}` }),
           el("span", { cls: "vlib-tag-pill vlib-tag-gender", text: v.gender === "Female" ? "👩 Female" : "👨 Male" })
         ]),
-        el("div", { cls: "vlib-card-meta", text: v.category || (v.sample ? `"${v.sample.substring(0, 45)}..."` : "Ultra-realistic neural voice") })
+        el("div", { cls: "vlib-card-meta", text: v.category || (v.sample ? `"${v.sample.substring(0, 45)}..."` : "Studio HD voice") })
       ]),
       el("div", { cls: "vlib-card-actions" }, [
         playBtn,
@@ -2281,6 +2372,10 @@ function renderVoiceLibraryCards() {
 }
 
 function selectVoiceFromLibrary(v) {
+  if (voiceStudioState.libraryMode === "premium") {
+    selectKokoroVoice(v);
+    return;
+  }
   voiceStudioState.selectedVoice = v;
   updateSelectedVoiceCardUI();
   closeVoiceLibraryModal();
@@ -2562,182 +2657,119 @@ async function handleGenerateCloning() {
   }
 }
 
-function renderPremiumLanguageBoxes() {
-  // Populate the language filter dropdown instead of tile grid
-  const langSelect = $("pfLanguage");
-  if (!langSelect) return;
-
-  // Remember current selection
-  const currentVal = langSelect.value || "all";
-
-  // Clear and rebuild options
-  while (langSelect.options.length > 1) langSelect.remove(1);
-
-  const langs = voiceStudioState.premiumLanguages || [];
-  langs.forEach(lang => {
-    const opt = document.createElement("option");
-    opt.value = lang.id;
-    opt.textContent = `${lang.flag} ${lang.name} (${lang.count})`;
-    langSelect.appendChild(opt);
-  });
-
-  // Restore selection
-  langSelect.value = currentVal;
-
-  // Wire filter events (only once)
-  if (!voiceStudioState._premiumFiltersWired) {
-    voiceStudioState._premiumFiltersWired = true;
-
-    langSelect.addEventListener("change", () => renderKokoroVoiceList());
-
-    const genderSelect = $("pfGender");
-    if (genderSelect) genderSelect.addEventListener("change", () => renderKokoroVoiceList());
-
-    const searchInput = $("pfSearch");
-    if (searchInput) searchInput.addEventListener("input", () => renderKokoroVoiceList());
-  }
-
-  renderKokoroVoiceList();
-}
-
-function selectPremiumLanguage(langId) {
-  const langSelect = $("pfLanguage");
-  if (langSelect) langSelect.value = langId;
-  renderKokoroVoiceList();
-
-  // Auto-select first voice for this language
-  const voices = (voiceStudioState.premiumVoices || []).filter(v => v.language_id === langId);
-  if (voices.length) {
-    selectKokoroVoice(voices[0]);
-  }
-}
-
-function renderKokoroVoiceList() {
-  const container = $("kokoroVoiceList");
-  if (!container) return;
-  clear(container);
-
-  const allVoices = voiceStudioState.premiumVoices || [];
-
-  // Read filter values
-  const langFilter = $("pfLanguage") ? $("pfLanguage").value : "all";
-  const genderFilter = $("pfGender") ? $("pfGender").value : "all";
-  const searchQuery = $("pfSearch") ? $("pfSearch").value.trim().toLowerCase() : "";
-
-  // Apply filters
-  let voices = allVoices;
-
-  if (langFilter !== "all") {
-    voices = voices.filter(v => v.language_id === langFilter);
-  }
-  if (genderFilter !== "all") {
-    voices = voices.filter(v => v.gender === genderFilter);
-  }
-  if (searchQuery) {
-    voices = voices.filter(v =>
-      (v.name || "").toLowerCase().includes(searchQuery) ||
-      (v.accent || "").toLowerCase().includes(searchQuery) ||
-      (v.category || "").toLowerCase().includes(searchQuery)
-    );
-  }
-
-  // Update result count
-  if ($("pfResultCount")) {
-    $("pfResultCount").textContent = `${voices.length} voice${voices.length !== 1 ? "s" : ""}`;
-  }
-
-  if (!voices.length) {
-    container.appendChild(el("div", {
-      cls: "hint",
-      style: { gridColumn: "1 / -1", padding: "2rem 0.5rem", textAlign: "center", fontSize: "0.82rem" },
-      text: "No voices match your filters. Try changing language or gender."
-    }));
-    return;
-  }
-
-  // Find language name from premiumLanguages catalog
-  const langMap = {};
-  (voiceStudioState.premiumLanguages || []).forEach(l => { langMap[l.id] = l.name; });
-
-  voices.forEach(v => {
-    const isSelected = voiceStudioState.selectedKokoroVoice && voiceStudioState.selectedKokoroVoice.id === v.id;
-    const langName = langMap[v.language_id] || v.accent || "Studio Voice";
-
-    const playBtn = el("button", {
-      cls: "icon-btn",
-      attrs: { type: "button", title: "Listen to sample" },
-      text: "▶",
-      on: {
-        click: (e) => {
-          e.stopPropagation();
-          playKokoroAudition(v);
-        }
-      }
-    });
-
-    const selectBtn = el("button", {
-      cls: "btn btn-primary btn-xs",
-      attrs: { type: "button" },
-      text: isSelected ? "✓ Selected" : "Select Voice",
-      on: {
-        click: (e) => {
-          e.stopPropagation();
-          selectKokoroVoice(v);
-        }
-      }
-    });
-
-    const card = el("div", {
-      cls: "vlib-card" + (isSelected ? " is-selected" : ""),
-      on: {
-        click: () => selectKokoroVoice(v)
-      }
-    }, [
-      el("div", { cls: "vlib-card-top" }, [
-        el("span", { cls: "vlib-country-badge" }, [
-          el("span", { cls: "flag", text: v.flag || "🎙️" }),
-          el("span", { text: v.accent || "Global" })
-        ])
-      ]),
-      el("div", { cls: "vlib-card-main" }, [
-        el("div", { cls: "vlib-voice-name", text: v.name || v.id }),
-        el("div", { cls: "vlib-badges-row" }, [
-          el("span", { cls: "vlib-tag-pill vlib-tag-lang", text: `🌐 ${langName}` }),
-          el("span", { cls: "vlib-tag-pill vlib-tag-gender", text: v.gender === "Female" ? "👩 Female" : "👨 Male" })
-        ]),
-        el("div", { cls: "vlib-card-meta", text: v.category || "Studio HD neural voice" })
-      ]),
-      el("div", { cls: "vlib-card-actions" }, [
-        playBtn,
-        selectBtn
-      ])
-    ]);
-
-    container.appendChild(card);
-  });
-}
+function renderPremiumLanguageBoxes() {}
+function selectPremiumLanguage(langId) {}
+function renderKokoroVoiceList() {}
 
 function selectKokoroVoice(v) {
   voiceStudioState.selectedKokoroVoice = v;
   updateSelectedKokoroVoiceUI();
-  renderKokoroVoiceList();
-  toast(`Selected: ${v.name} (${v.accent || ""})! 🌟`, "ok");
+  closeVoiceLibraryModal();
+  toast(`Selected: ${v.name} (${v.accent || ""})! ✨`, "ok");
 }
 
 function updateSelectedKokoroVoiceUI() {
   const v = voiceStudioState.selectedKokoroVoice;
   if (!v) return;
-  if ($("kokoroActiveFlag")) $("kokoroActiveFlag").textContent = v.flag || "🎙️";
-  if ($("kokoroActiveName")) $("kokoroActiveName").textContent = v.name || v.id;
-  if ($("kokoroActiveMeta")) $("kokoroActiveMeta").textContent = `${v.accent} • ${v.gender} • ${v.category}`;
-  if ($("kokoroActiveEngineTitle")) $("kokoroActiveEngineTitle").textContent = v.engine_badge || "Studio HD Voice";
-  if ($("kokoroActiveEngineSub")) $("kokoroActiveEngineSub").textContent = v.engine === "kokoro" ? "Kokoro-82M 24kHz CD Audio" : "Master Broadcast Neural Pipeline";
-  if ($("kokoroActiveEngineIcon")) $("kokoroActiveEngineIcon").textContent = v.engine === "kokoro" ? "💎" : "🌟";
+
+  const flagEl = $("kokoroVpcFlag") || $("kokoroActiveFlag");
+  const nameEl = $("kokoroVpcName") || $("kokoroActiveName");
+  const catEl = $("kokoroVpcCategory") || $("kokoroActiveMeta");
+  const starBadge = $("kokoroVpcStarIcon");
+
+  const langMap = {};
+  (voiceStudioState.premiumLanguages || []).forEach(l => { langMap[l.id] = l.name; });
+  const langName = langMap[v.language_id] || v.language || "Studio";
+  const countryName = v.accent || v.country || "Global";
+
+  if (flagEl) flagEl.textContent = v.flag || "🎙️";
+  if (nameEl) nameEl.textContent = v.name || v.id;
+  if (catEl) catEl.textContent = `${countryName} • ${langName} • ${v.gender || "Neural"}`;
+
+  if (starBadge) {
+    const isFav = voiceStudioState.favorites.has(v.id);
+    starBadge.style.opacity = isFav ? "1" : "0.35";
+    starBadge.title = isFav ? "Starred Favorite" : "Click to Star Favorite";
+  }
+}
+
+function switchKokoroInspectorTab(tab) {
+  const isSettings = tab === "settings";
+  if ($("tabKokoroSettings")) $("tabKokoroSettings").classList.toggle("is-active", isSettings);
+  if ($("tabKokoroHistory")) $("tabKokoroHistory").classList.toggle("is-active", !isSettings);
+  if ($("paneKokoroSettings")) $("paneKokoroSettings").hidden = !isSettings;
+  if ($("paneKokoroHistory")) $("paneKokoroHistory").hidden = isSettings;
+}
+
+function addKokoroHistoryItem(item) {
+  if (!voiceStudioState.kokoroHistory) voiceStudioState.kokoroHistory = [];
+  voiceStudioState.kokoroHistory.unshift(item);
+  renderKokoroHistory();
+}
+
+function clearKokoroHistory() {
+  voiceStudioState.kokoroHistory = [];
+  renderKokoroHistory();
+}
+
+function renderKokoroHistory() {
+  const list = $("kokoroHistoryList");
+  if (!list) return;
+  clear(list);
+
+  const hist = voiceStudioState.kokoroHistory || [];
+  if (!hist.length) {
+    list.appendChild(el("p", {
+      cls: "hint",
+      style: { textAlign: "center", padding: "1.5rem 0" },
+      text: "No audio generated in this session yet."
+    }));
+    return;
+  }
+
+  hist.forEach(h => {
+    const card = el("div", { cls: "tts-history-item" }, [
+      el("div", { cls: "thi-head" }, [
+        el("strong", { text: h.voice }),
+        el("small", { cls: "hint", text: `${(Number(h.duration) || 0).toFixed(1)}s • ${h.timestamp}` })
+      ]),
+      el("div", { cls: "thi-text", text: h.text }),
+      el("div", { cls: "thi-actions" }, [
+        el("button", {
+          cls: "btn btn-ghost btn-xs",
+          attrs: { type: "button" },
+          text: "▶ Play",
+          on: {
+            click: () => {
+              if (voiceStudioState.previewAudio) voiceStudioState.previewAudio.pause();
+              voiceStudioState.previewAudio = new Audio(h.audio_url);
+              voiceStudioState.previewAudio.play().catch(() => {});
+            }
+          }
+        }),
+        el("button", {
+          cls: "btn btn-ghost btn-xs",
+          attrs: { type: "button" },
+          text: "Load Script",
+          on: {
+            click: () => {
+              const ta = $("kokoroScriptTextarea");
+              if (ta) {
+                ta.value = h.text;
+                if ($("kokoroCharCount")) $("kokoroCharCount").textContent = ta.value.length.toLocaleString();
+              }
+            }
+          }
+        })
+      ])
+    ]);
+    list.appendChild(card);
+  });
 }
 
 async function playKokoroAudition(v) {
   if (!v) return;
-  const sample = v.sample || "Welcome to Kokoro Studio high fidelity voice synthesis.";
+  const sample = v.sample || "Welcome to Studio HD high fidelity voice synthesis.";
   toast(`Synthesizing preview for ${v.name}...`, "ok");
 
   try {
@@ -2745,6 +2777,7 @@ async function playKokoroAudition(v) {
       text: sample,
       voice: v.id,
       speed: 1.0,
+      pitch: 0,
       session_id: S.sid || null
     });
 
@@ -2774,7 +2807,7 @@ function loadKokoroScenarioTemplate(scenario) {
   if (templates[scenario]) {
     textarea.value = templates[scenario];
     if ($("kokoroCharCount")) $("kokoroCharCount").textContent = textarea.value.length.toLocaleString();
-    toast("Quick starter loaded into Kokoro Studio!", "ok");
+    toast("Quick starter loaded into Studio!", "ok");
   }
 }
 
@@ -2782,12 +2815,14 @@ async function handleGenerateKokoro() {
   const textarea = $("kokoroScriptTextarea");
   const text = (textarea ? textarea.value : "").trim();
   if (!text) {
-    toast("Please enter your script for Kokoro Studio generation.", "warn");
+    toast("Please enter your script for Studio HD generation.", "warn");
     return;
   }
 
   const voice = voiceStudioState.selectedKokoroVoice ? voiceStudioState.selectedKokoroVoice.id : "am_adam";
   const speed = parseFloat(($("sliderKokoroSpeed") || {}).value) || 1.0;
+  const pitch = parseInt(($("sliderKokoroPitch") || {}).value, 10) || 0;
+  const emotion = ($("kokoroEmotionSelect") || {}).value || "neutral";
 
   const btn = $("btnKokoroGenerate");
   const btnIcon = $("kokoroBtnIcon");
@@ -2804,8 +2839,7 @@ async function handleGenerateKokoro() {
   if (progressBox) progressBox.hidden = false;
   if (progressPct) progressPct.textContent = "15%";
   if (progressFill) progressFill.style.width = "15%";
-  const engineName = (voiceStudioState.selectedKokoroVoice && voiceStudioState.selectedKokoroVoice.engine_badge) || "Studio HD";
-  if (progressStatus) progressStatus.textContent = `Synthesizing via ${engineName}...`;
+  if (progressStatus) progressStatus.textContent = "Synthesizing Studio HD Speech...";
 
   let pct = 15;
   const progressTimer = setInterval(() => {
@@ -2814,7 +2848,7 @@ async function handleGenerateKokoro() {
       if (pct > 85) pct = 85;
       if (progressPct) progressPct.textContent = pct + "%";
       if (progressFill) progressFill.style.width = pct + "%";
-      if (pct > 50 && progressStatus) progressStatus.textContent = `Mastering HD audio via ${engineName}...`;
+      if (pct > 50 && progressStatus) progressStatus.textContent = "Mastering HD audio...";
     }
   }, 250);
 
@@ -2823,13 +2857,15 @@ async function handleGenerateKokoro() {
       text,
       voice,
       speed,
+      pitch,
+      emotion,
       session_id: S.sid || null
     });
 
     clearInterval(progressTimer);
     if (progressPct) progressPct.textContent = "100%";
     if (progressFill) progressFill.style.width = "100%";
-    if (progressStatus) progressStatus.textContent = `Completed! ${res.engine || "Studio HD"} Audio Ready.`;
+    if (progressStatus) progressStatus.textContent = "Completed! Studio HD Audio Ready.";
 
     voiceStudioState.lastGenerated = res;
     const card = $("kokoroResultCard");
@@ -2842,7 +2878,7 @@ async function handleGenerateKokoro() {
     }
 
     if ($("kokoroResultMeta")) {
-      $("kokoroResultMeta").textContent = `Duration: ${res.duration.toFixed(1)}s • ${res.engine || "Studio HD"} • ${res.word_count || (res.words && res.words.length) || 0} words`;
+      $("kokoroResultMeta").textContent = `Duration: ${(Number(res.duration) || 0).toFixed(1)}s • Studio HD • ${res.word_count || (res.words && res.words.length) || 0} words`;
     }
 
     const dlAudio = $("kokoroDownloadAudioLink");
@@ -2853,10 +2889,18 @@ async function handleGenerateKokoro() {
       dlSrt.href = API + "/files/" + (S.sid || "tts_cache") + "/tts/" + res.srt_filename;
     }
 
-    toast("🌟 Kokoro Studio HD speech generated successfully!", "ok");
+    addKokoroHistoryItem({
+      voice: (voiceStudioState.selectedKokoroVoice && voiceStudioState.selectedKokoroVoice.name) || voice,
+      text: text.length > 70 ? text.substring(0, 70) + "..." : text,
+      duration: res.duration || 0,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      audio_url: res.audio_url
+    });
+
+    toast("🌟 Studio HD speech generated successfully!", "ok");
   } catch (err) {
     clearInterval(progressTimer);
-    toast("Kokoro generation error: " + err.message, "err");
+    toast("Generation error: " + err.message, "err");
   } finally {
     clearInterval(progressTimer);
     if (btn) btn.disabled = false;
