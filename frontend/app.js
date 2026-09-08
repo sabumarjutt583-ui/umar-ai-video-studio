@@ -2649,19 +2649,24 @@ function renderKokoroVoiceList() {
   if (!voices.length) {
     container.appendChild(el("div", {
       cls: "hint",
-      style: { padding: "1.5rem 0.5rem", textAlign: "center", fontSize: "0.78rem" },
+      style: { gridColumn: "1 / -1", padding: "2rem 0.5rem", textAlign: "center", fontSize: "0.82rem" },
       text: "No voices match your filters. Try changing language or gender."
     }));
     return;
   }
 
+  // Find language name from premiumLanguages catalog
+  const langMap = {};
+  (voiceStudioState.premiumLanguages || []).forEach(l => { langMap[l.id] = l.name; });
+
   voices.forEach(v => {
     const isSelected = voiceStudioState.selectedKokoroVoice && voiceStudioState.selectedKokoroVoice.id === v.id;
+    const langName = langMap[v.language_id] || v.accent || "Studio Voice";
 
-    const auditionBtn = el("button", {
-      cls: "kokoro-v-audition-btn",
-      attrs: { type: "button", title: "Listen to voice preview" },
-      text: "▶ Audition",
+    const playBtn = el("button", {
+      cls: "icon-btn",
+      attrs: { type: "button", title: "Listen to sample" },
+      text: "▶",
       on: {
         click: (e) => {
           e.stopPropagation();
@@ -2670,26 +2675,45 @@ function renderKokoroVoiceList() {
       }
     });
 
-    const item = el("div", {
-      cls: "kokoro-voice-item" + (isSelected ? " is-selected" : ""),
+    const selectBtn = el("button", {
+      cls: "btn btn-primary btn-xs",
+      attrs: { type: "button" },
+      text: isSelected ? "✓ Selected" : "Select Voice",
+      on: {
+        click: (e) => {
+          e.stopPropagation();
+          selectKokoroVoice(v);
+        }
+      }
+    });
+
+    const card = el("div", {
+      cls: "vlib-card" + (isSelected ? " is-selected" : ""),
       on: {
         click: () => selectKokoroVoice(v)
       }
     }, [
-      el("div", { cls: "kokoro-v-left" }, [
-        el("span", { cls: "kokoro-v-flag", text: v.flag || "🎙️" }),
-        el("div", { cls: "kokoro-v-meta" }, [
-          el("div", { cls: "kokoro-v-name", text: v.name || v.id }),
-          el("div", { cls: "kokoro-v-desc", text: `${v.flag} ${v.accent} • ${v.gender} • ${v.category}` }),
-          el("span", { cls: "kokoro-v-engine-pill", text: v.engine_badge || "Studio HD" })
+      el("div", { cls: "vlib-card-top" }, [
+        el("span", { cls: "vlib-country-badge" }, [
+          el("span", { cls: "flag", text: v.flag || "🎙️" }),
+          el("span", { text: v.accent || "Global" })
         ])
       ]),
-      el("div", { cls: "kokoro-v-actions" }, [
-        auditionBtn
+      el("div", { cls: "vlib-card-main" }, [
+        el("div", { cls: "vlib-voice-name", text: v.name || v.id }),
+        el("div", { cls: "vlib-badges-row" }, [
+          el("span", { cls: "vlib-tag-pill vlib-tag-lang", text: `🌐 ${langName}` }),
+          el("span", { cls: "vlib-tag-pill vlib-tag-gender", text: v.gender === "Female" ? "👩 Female" : "👨 Male" })
+        ]),
+        el("div", { cls: "vlib-card-meta", text: v.category || "Studio HD neural voice" })
+      ]),
+      el("div", { cls: "vlib-card-actions" }, [
+        playBtn,
+        selectBtn
       ])
     ]);
 
-    container.appendChild(item);
+    container.appendChild(card);
   });
 }
 

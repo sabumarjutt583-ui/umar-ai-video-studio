@@ -1315,9 +1315,33 @@
     <div class="v-subpage" id="pageKokoro" hidden>
       <div class="voice-studio-grid">
 
-        <!-- Left: Unified Premium Voice Browser with Filters -->
+        <!-- Left: Info & Tips -->
         <aside class="voice-sidebar">
-          <div class="voice-clone-box">
+          <div class="voice-sidebar-card">
+            <strong style="color:#c4b5fd">⚡ 100% Free & Unlimited</strong>
+            <p class="hint" style="font-size:0.75rem;margin-top:0.3rem">
+              47 Studio HD voices across 12 languages. No character limits, no API fees, and zero credit expiration.
+            </p>
+          </div>
+
+          <div class="voice-sidebar-card">
+            <strong>🌍 12 Languages Supported</strong>
+            <p class="hint" style="font-size:0.75rem;margin-top:0.3rem">
+              English, Urdu, Arabic, Hindi, Korean, Spanish, Japanese, Chinese, Turkish, German, French, Russian — all with broadcast-grade quality.
+            </p>
+          </div>
+
+          <div class="voice-sidebar-card">
+            <strong>🎬 1-Click Video Sync</strong>
+            <p class="hint" style="font-size:0.75rem;margin-top:0.3rem">
+              Audio is automatically converted into word-by-word timestamps and sent directly into your video editor timeline!
+            </p>
+          </div>
+        </aside>
+
+        <!-- Center: Voice Cards + Script Editor -->
+        <main class="voice-canvas">
+          <div class="voice-clone-box" style="margin-bottom:1rem">
             <div class="card-head-simple" style="margin-bottom:0.6rem">
               <div>
                 <strong style="font-size:0.85rem">🌟 Studio HD Voices</strong>
@@ -1344,22 +1368,14 @@
               </div>
             </div>
 
-            <!-- All Voices List (scrollable) -->
-            <div class="kokoro-voice-list" id="kokoroVoiceList" style="max-height:420px">
-              <!-- Dynamically populated -->
+            <!-- Voice Cards Grid (same style as Free Voices library) -->
+            <div class="vlib-grid-container" id="kokoroGridContainer" style="max-height:320px">
+              <div class="vlib-cards-grid" id="kokoroVoiceList">
+                <!-- Dynamically populated -->
+              </div>
             </div>
           </div>
 
-          <div class="voice-sidebar-card">
-            <strong>🎯 Best Engine per Language</strong>
-            <p class="hint" style="font-size:0.75rem;margin-top:0.3rem">
-              English, Japanese &amp; Chinese use <strong>Kokoro-82M (24kHz CD Audio)</strong>. Urdu, Arabic, Korean &amp; Turkish use <strong>Broadcast Master Neural</strong>. Highest fidelity guaranteed.
-            </p>
-          </div>
-        </aside>
-
-        <!-- Center: Script Editor -->
-        <main class="voice-canvas">
           <div class="scenario-bar">
             <span class="scenario-lbl">Quick Starters:</span>
             <div class="scenario-chips">
