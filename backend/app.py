@@ -16,7 +16,7 @@ v10 mein naya:
 - Dynamic base URL (hardcoded 127.0.0.1 nahi — LAN/phone se bhi chalta hai)
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Body, Request
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
