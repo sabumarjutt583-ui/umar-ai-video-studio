@@ -1,0 +1,10 @@
+{
+  "groq_keys": [
+    "YOUR_GROQ_API_KEY_1",
+    "YOUR_GROQ_API_KEY_2"
+  ],
+  "gemini_keys": [
+    "YOUR_GEMINI_API_KEY_1",
+    "YOUR_GEMINI_API_KEY_2"
+  ]
+}

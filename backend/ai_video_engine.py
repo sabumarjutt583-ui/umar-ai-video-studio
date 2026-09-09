@@ -448,6 +448,18 @@ def split_script_into_scenes_rule_based(
     return scenes
 
 
+def load_configured_keys() -> Dict[str, List[str]]:
+    """Loads stored Groq & Gemini API keys from backend/data/ai_keys.json."""
+    keys_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "ai_keys.json")
+    if os.path.exists(keys_path):
+        try:
+            with open(keys_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.warning(f"Failed to read ai_keys.json: {e}")
+    return {"groq_keys": [], "gemini_keys": []}
+
+
 async def breakdown_script_with_gemini_or_fallback(
     script_text: str,
     style_key: str = "cinematic",
@@ -460,14 +472,21 @@ async def breakdown_script_with_gemini_or_fallback(
     avatar_mode: bool = False,
     avatar_image_url: str = "",
     avatar_layout: str = "full_presenter",
-    gemini_key: Optional[str] = None
+    gemini_key: Optional[str] = None,
+    groq_keys: Optional[List[str]] = None
 ) -> List[Dict[str, Any]]:
     """
-    Uses Google Gemini Flash if API key is provided, otherwise falls back smoothly to rule-based.
+    Uses GROQ ONLY with multi-key auto-rotation for 100% Groq-powered Hollywood script directing.
+    GEMINI IS NEVER USED FOR PROMPTING (strict user policy).
     """
-    key = gemini_key or os.environ.get("GEMINI_API_KEY", "").strip()
-    if not key:
-        logger.info("No Gemini API key provided; using smart rule-based Scene Director.")
+    keys_data = load_configured_keys()
+    active_keys = [k for k in (groq_keys or keys_data.get("groq_keys", [])) if isinstance(k, str) and k.startswith("gsk_")]
+    env_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if env_key and env_key not in active_keys:
+        active_keys.append(env_key)
+
+    if not active_keys:
+        logger.info("No Groq API keys found; falling back to smart rule-based Scene Director.")
         return split_script_into_scenes_rule_based(
             script_text,
             style_key=style_key,
@@ -491,75 +510,104 @@ async def breakdown_script_with_gemini_or_fallback(
     chosen_niche_label = custom_niche_text if (niche == "custom_niche" and custom_niche_text) else NICHES_CATALOG.get(niche, {}).get("name", "General")
     chosen_type_label = VIDEO_TYPES.get(video_type, {}).get("name", "Cinematic Motion")
 
-    system_instruction = f"""
-You are a master Hollywood film director and AI prompt engineer.
-Break down the given narration script into sequential scenes (each ~4-6 seconds of speech).
+    char_context = ""
+    if characters and len(characters) > 0:
+        char_lines = []
+        for c in characters:
+            cn = c.get("name", "").strip()
+            ct = c.get("traits", "").strip()
+            if cn and ct:
+                char_lines.append(f"- {cn}: {ct}")
+            elif cn:
+                char_lines.append(f"- {cn}")
+        if char_lines:
+            char_context = "Consistent Main Characters (include character visual appearance in every scene):\n" + "\n".join(char_lines)
+    elif character_desc and character_desc.strip():
+        char_context = f"Consistent Subject/Character Appearance: {character_desc.strip()}"
+
+    system_prompt = f"""You are a master Hollywood film director and AI prompt engineer.
+Break down the provided narration script into sequential cinematic scenes (each ~4-6 seconds of narration).
 Context:
-- Video Type: {chosen_type_label}
-- Niche/Genre: {chosen_niche_label}
+- Video Genre / Niche: {chosen_niche_label}
 - Visual Art Style: {style_anchor}
-- Subject/Character: {character_desc if character_desc else 'cinematic subject'}
+{char_context}
 
-For each scene, provide:
-1. "text": The exact verbatim spoken line(s) for this scene from the script.
-2. "prompt": A highly detailed English visual prompt for FLUX.1 matching the Video Type and Niche.
-   Describe composition, lighting, camera angle, facial emotion, environment.
-3. "motion": One of ["zoom_in_slow", "zoom_out_slow", "pan_left_right", "pan_right_left", "zoom_in_fast"].
+For each scene, output an object with:
+1. "index": 1-based sequential scene number.
+2. "text": The exact spoken line(s) for this scene verbatim from the script.
+3. "prompt": A rich, highly detailed visual prompt for the image generator (describing composition, subject appearance, emotional expression, lighting, camera angle, atmospheric details, 8k resolution, cinematic masterpiece).
+4. "motion": One of ["zoom_in_slow", "pan_left_right", "zoom_out_slow", "pan_right_left", "zoom_in_fast"].
 
-Output ONLY a valid JSON array of objects with keys: index, text, prompt, motion.
-Do NOT output markdown blocks or conversational text.
-"""
+OUTPUT INSTRUCTION: Output ONLY a valid JSON array of scene objects. Do not write markdown blocks or any conversational text."""
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={key}"
-    payload = {
-        "contents": [
-            {
-                "role": "user",
-                "parts": [
-                    {"text": system_instruction + "\n\nScript:\n" + script_text}
-                ]
+    user_prompt = f"Script to direct:\n{script_text}"
+    models_to_try = [
+        "qwen/qwen3.8-27b",
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "qwen/qwen3.6-27b"
+    ]
+    loop = asyncio.get_event_loop()
+
+    # Multi-key rotation across Groq keys
+    for key_idx, groq_key in enumerate(active_keys):
+        for model_name in models_to_try:
+            payload = {
+                "model": model_name,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": 0.3,
+                "max_tokens": 2048
             }
-        ],
-        "generationConfig": {
-            "responseMimeType": "application/json",
-            "temperature": 0.4
-        }
-    }
+            try:
+                req = urllib.request.Request(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={
+                        "Authorization": f"Bearer {groq_key}",
+                        "Content-Type": "application/json",
+                        "User-Agent": f"Mozilla/5.0 UmarVideoStudio/Groq-{key_idx+1}"
+                    }
+                )
+                resp = await loop.run_in_executor(None, lambda: urllib.request.urlopen(req, timeout=15))
+                resp_data = json.loads(resp.read().decode("utf-8"))
+                raw_content = resp_data["choices"][0]["message"]["content"].strip()
 
-    try:
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"}
-        )
-        loop = asyncio.get_event_loop()
-        resp = await loop.run_in_executor(None, lambda: urllib.request.urlopen(req, timeout=20))
-        resp_data = json.loads(resp.read().decode("utf-8"))
+                raw_content = re.sub(r"^```json\s*", "", raw_content, flags=re.MULTILINE)
+                raw_content = re.sub(r"^```\s*", "", raw_content, flags=re.MULTILINE)
+                raw_content = re.sub(r"```$", "", raw_content.strip())
 
-        raw_content = resp_data["candidates"][0]["content"]["parts"][0]["text"]
-        raw_content = re.sub(r'^```json\s*', '', raw_content.strip())
-        raw_content = re.sub(r'```$', '', raw_content.strip())
-        parsed_scenes = json.loads(raw_content)
+                match = re.search(r"\[\s*\{.*\}\s*\]", raw_content, re.DOTALL)
+                if match:
+                    raw_content = match.group(0)
 
-        results = []
-        for i, item in enumerate(parsed_scenes):
-            results.append({
-                "index": i,
-                "id": f"scene_{i:03d}",
-                "text": item.get("text", "").strip(),
-                "prompt": item.get("prompt", "").strip() or style_anchor,
-                "motion": item.get("motion", CAMERA_MOTIONS[i % len(CAMERA_MOTIONS)]),
-                "image_url": None,
-                "local_image_path": None,
-                "start": 0.0,
-                "end": 0.0,
-                "duration": 0.0
-            })
-        if results:
-            return results
-    except Exception as e:
-        logger.warning(f"Gemini director call failed ({e}); falling back to smart rule-based breakdown.")
+                parsed_scenes = json.loads(raw_content)
+                if isinstance(parsed_scenes, list) and len(parsed_scenes) > 0:
+                    logger.info(f"Groq Director SUCCESS with Key #{key_idx+1} ({model_name}): {len(parsed_scenes)} scenes created!")
+                    results = []
+                    for i, item in enumerate(parsed_scenes):
+                        results.append({
+                            "index": i,
+                            "id": f"scene_{i:03d}",
+                            "text": item.get("text", "").strip(),
+                            "prompt": item.get("prompt", "").strip() or style_anchor,
+                            "motion": item.get("motion", CAMERA_MOTIONS[i % len(CAMERA_MOTIONS)]),
+                            "image_url": None,
+                            "local_image_path": None,
+                            "start": 0.0,
+                            "end": 0.0,
+                            "duration": 0.0
+                        })
+                    return results
+            except urllib.error.HTTPError as he:
+                logger.warning(f"Groq Key #{key_idx+1} ({model_name}) HTTP {he.code}: {he.reason}. Rotating...")
+                break
+            except Exception as e:
+                logger.warning(f"Groq Key #{key_idx+1} attempt failed: {e}")
 
+    logger.warning("All Groq keys failed or exhausted; falling back to smart rule-based director.")
     return split_script_into_scenes_rule_based(
         script_text,
         style_key=style_key,
@@ -567,12 +615,16 @@ Do NOT output markdown blocks or conversational text.
         video_type=video_type,
         niche=niche,
         custom_niche_text=custom_niche_text,
-        custom_style_prompt=custom_style_prompt
+        custom_style_prompt=custom_style_prompt,
+        characters=characters,
+        avatar_mode=avatar_mode,
+        avatar_image_url=avatar_image_url,
+        avatar_layout=avatar_layout
     )
 
 
 # ---------------------------------------------------------------------------
-# 2. 4K Visual Generation via Pollinations FLUX.1
+# 2. 4K Visual Generation via Google Nano Banana 2 & Pollinations FLUX.1
 # ---------------------------------------------------------------------------
 def get_flux_dimensions(aspect_ratio: str = "9:16") -> tuple[int, int]:
     """Returns optimal width & height for FLUX.1 generation."""
@@ -589,18 +641,73 @@ async def generate_single_scene_image(
     prompt: str,
     aspect_ratio: str,
     save_path: str,
-    seed: int
+    seed: int = 42,
+    gemini_keys: Optional[List[str]] = None
 ) -> bool:
     """
-    Downloads an AI image from Pollinations with multiple free models and robust exponential retry backoff.
+    Downloads an AI image with 3-tier cascade:
+    1. Google Nano Banana 2 (Gemini Image models rotating across the 5 Gemini keys)
+    2. Pollinations FLUX.1 (Preserved high quality model)
+    3. Pollinations Turbo (Preserved ultra-fast failover model)
+    4. FFmpeg canvas fallback
     """
+    import base64
+    loop = asyncio.get_event_loop()
+
+    # Load configured Gemini keys for Google Nano Banana 2
+    keys_data = load_configured_keys()
+    active_gemini_keys = gemini_keys if gemini_keys else [k for k in keys_data.get("gemini_keys", []) if isinstance(k, str) and (k.startswith("AQ.") or k.startswith("AIzaSy"))]
+
+    # -------------------------------------------------------------------------
+    # TIER 1: Google Nano Banana 2 (Gemini Flash Image)
+    # -------------------------------------------------------------------------
+    if active_gemini_keys:
+        nano_banana_models = [
+            "gemini-3.1-flash-image",
+            "gemini-2.5-flash-image",
+            "gemini-3-pro-image",
+            "gemini-3.1-flash-lite-image"
+        ]
+        g_ar = "9:16" if aspect_ratio == "9:16" else ("16:9" if aspect_ratio == "16:9" else "1:1")
+
+        for g_key in active_gemini_keys:
+            for m_name in nano_banana_models:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{m_name}:generateContent?key={g_key}"
+                payload = {
+                    "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                    "generationConfig": {
+                        "responseModalities": ["IMAGE"],
+                        "imageConfig": {"aspectRatio": g_ar}
+                    }
+                }
+                try:
+                    req = urllib.request.Request(
+                        url,
+                        data=json.dumps(payload).encode("utf-8"),
+                        headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0 UmarVideoStudio/NanoBanana2"}
+                    )
+                    resp = await loop.run_in_executor(None, lambda: urllib.request.urlopen(req, timeout=25))
+                    if resp.status == 200:
+                        resp_data = json.loads(resp.read().decode("utf-8"))
+                        candidates = resp_data.get("candidates", [])
+                        if candidates:
+                            parts = candidates[0].get("content", {}).get("parts", [])
+                            for p in parts:
+                                if "inlineData" in p and p["inlineData"].get("data"):
+                                    img_bytes = base64.b64decode(p["inlineData"]["data"])
+                                    if len(img_bytes) > 2048:
+                                        with open(save_path, "wb") as f_out:
+                                            f_out.write(img_bytes)
+                                        logger.info(f"Scene {scene_idx} SUCCESS via Google Nano Banana 2 ({m_name}, {len(img_bytes)} bytes)!")
+                                        return True
+                except Exception:
+                    pass
+
+    # -------------------------------------------------------------------------
+    # TIER 2 & 3: Pollinations FLUX.1 & Turbo (Preserved as requested)
+    # -------------------------------------------------------------------------
     width, height = get_flux_dimensions(aspect_ratio)
     encoded_prompt = urllib.parse.quote_plus(prompt.strip())
-
-    # Free model candidates in order of preference
-    # 1. flux: Top quality photorealistic
-    # 2. turbo: Ultra-fast, highly responsive when flux has queue
-    # 3. default (no model param): Stable pollinations standard
     model_sequence = ["flux", "turbo", ""]
 
     for attempt in range(len(model_sequence) * 2):
@@ -618,7 +725,6 @@ async def generate_single_scene_image(
                 attempt_url,
                 headers={"User-Agent": f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) StudioClient/{100 + attempt}"}
             )
-            loop = asyncio.get_event_loop()
             resp = await loop.run_in_executor(None, lambda: urllib.request.urlopen(req, timeout=35))
             if resp.status == 200:
                 img_bytes = resp.read()
@@ -635,7 +741,9 @@ async def generate_single_scene_image(
             logger.warning(f"Scene {scene_idx} attempt {attempt+1} failed: {e}")
             await asyncio.sleep(2.0)
 
-    # If all remote attempts fail, generate a solid color background with text fallback
+    # -------------------------------------------------------------------------
+    # TIER 4: FFmpeg solid fallback
+    # -------------------------------------------------------------------------
     try:
         import subprocess
         dim = get_dimensions(aspect_ratio, "1080p")
